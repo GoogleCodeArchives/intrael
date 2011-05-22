@@ -253,16 +253,22 @@ while in the remote case it will happen asynchonously. In both cases when the fu
 or Intrael.remoteConfig objects, respectively, while have been set and you can access them. If either of these are null it means that
 there was no config available. If there was an object it will have one or more numeric keys(those specified by the "id" query argument)
 each reffering to an object that consists of the following properties:
+
  
 * offsetX * = The X offset of the browser viewport(Regardless of browser chrome) as measured by the calibration page when the calibration took place.
+
  
 * offsetY * = The Y offset of the browser viewport(Regardless of browser chrome) as measured by the calibration page when the calibration took place.
+
  
 * src * = An array of 4 elements representing the screen coordinates at the time of the calibration. Each of these 4 coords are in the form of [X,Y] arrays.
+
  
 * dst * = An array of 4 elements representing the detected objects that correspond to the screen corners. These are 32 element arrays each and described below.
+
  
 * server * = A string with the host:port you had specified at calibration
+
 
 
 You can also pass a "server" property to the *options* object to redefine the server host and an "errorhandler" function to catch connection errors.
