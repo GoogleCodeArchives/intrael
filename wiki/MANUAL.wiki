@@ -31,6 +31,31 @@ which can then be fetched by the helper script, even on other domains.
 The Google code page has the software along with setup instructions,
 developer info and a couple of discussion groups that could be helpful.
 
+==INSTALL==
+=== Requirements ===
+
+- libfreenect (All platforms) http://openkinect.org/wiki/Getting_Started
+
+- pthreads (All platforms) Pthread-win32 for windows is available at http://http://sourceware.org/pthreads-win32/
+
+- Cmake >= 2.6 (All platforms) http://www.cmake.org
+
+=== Basic Compiling Instructions ===
+
+To use CMake:
+
+- Make a directory somewhere, like 'build' in your repo directory.
+- Go into that directory
+- Type cmake ..
+- Run make
+
+=== Windows platform specifics ===
+
+You'll have to define the location of the pthreads lib and header files by hand.
+
+Follow the same instructions that are provided by libfreenect on the link above.
+
+
 
 ==OPTIONS==
 
