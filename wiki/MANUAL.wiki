@@ -202,45 +202,45 @@ You can pass a "count" query argument on the page url to specify the timeout for
 If multiple points exist at the timeout, the last one will be chosen by default(generally the lower right from the kinect's POV)
 You can fine tune the selection process by passing one of the following values as the "mode" query argument on the page's url:
  
- * x * = Select the object that has the lowest X coordinate.
+* x * = Select the object that has the lowest X coordinate.
 
- * X * = Select the object that has the greatest X coordinate.
+* X * = Select the object that has the greatest X coordinate.
 
- * y * = Select the object that has the lowest Y coordinate.
+* y * = Select the object that has the lowest Y coordinate.
 
- * Y * = Select the object that has the greatest Y coordinate. 
+* Y * = Select the object that has the greatest Y coordinate. 
 
- * z * = Select the object that has the lowest Z coordinate.
+* z * = Select the object that has the lowest Z coordinate.
 
- * Z * = Select the object that has the greatest Z coordinate.
+* Z * = Select the object that has the greatest Z coordinate.
 
- * c * = Select the object that has the lowest Z coordinate on it's central point(see protocol).
+* c * = Select the object that has the lowest Z coordinate on it's central point(see protocol).
 
- * c * = Select the object that has the greatest Z coordinate on it's central point.
+* c * = Select the object that has the greatest Z coordinate on it's central point.
 
- * p * = Select the object with the smallest pixel count.
+* p * = Select the object with the smallest pixel count.
 
- * P * = Select the object with the greatest pixel count.
+* P * = Select the object with the greatest pixel count.
 
- * a * = Select the object with the smallest average depth.
+* a * = Select the object with the smallest average depth.
 
- * A * = Select the object with the greatest average depth.
+* A * = Select the object with the greatest average depth.
 
- * t * = Select the object with the smallest width/height ratio.
+* t * = Select the object with the smallest width/height ratio.
 
- * T * = Select the object with the greatest width/height ratio.
+* T * = Select the object with the greatest width/height ratio.
 
- * q * = Select the object with the lowest density (pixel count / (width in px*height in px)).
+* q * = Select the object with the lowest density (pixel count / (width in px*height in px)).
 
- * Q * = Select the object with the greatest density (pixel count / (width in px*height in px)).
+* Q * = Select the object with the greatest density (pixel count / (width in px*height in px)).
 
- * w * = Select the object with the lowest (width in pixels*Average depth).
+* w * = Select the object with the lowest (width in pixels*Average depth).
 
- * W * = Select the object with the greatest (width in pixels*Average depth).
+* W * = Select the object with the greatest (width in pixels*Average depth).
 
- * h * = Select the object with the lowest (height in pixels*Average depth).
+* h * = Select the object with the lowest (height in pixels*Average depth).
 
- * H * = Select the object with the greatest (height in pixels*Average depth).
+* H * = Select the object with the greatest (height in pixels*Average depth).
   
 When all four points have been defined the helper script will be able to recollect them, *even on other domains*. All you need is 
 a script tag calling http://www.intrael.com/scripts/intrael.js in your page's head. You can see how it's used on the main page 
