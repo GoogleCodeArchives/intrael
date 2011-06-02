@@ -218,21 +218,6 @@ You can fine tune the selection process by passing one of the following values a
 
 * A * = Select the object with the greatest average depth.
 
-* t * = Select the object with the smallest width/height ratio.
-
-* T * = Select the object with the greatest width/height ratio.
-
-* q * = Select the object with the lowest density (pixel count / (width in px*height in px)).
-
-* Q * = Select the object with the greatest density (pixel count / (width in px*height in px)).
-
-* w * = Select the object with the lowest (width in pixels*Average depth).
-
-* W * = Select the object with the greatest (width in pixels*Average depth).
-
-* h * = Select the object with the lowest (height in pixels*Average depth).
-
-* H * = Select the object with the greatest (height in pixels*Average depth).
 
 
 When all four points have been defined the helper script will be able to recollect them, *even on other domains*. All you need is 
