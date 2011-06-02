@@ -306,7 +306,6 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp)
 		 memcpy(depth_ref,depth,FRAME_PIXELS*2);
 		 reset=0;
 		}
-		refcount--;
 		if(refcount > 0){
 		 for(i = 0; i < FRAME_PIXELS; i++)
 		 	depth_ref[i] = depth_ref[i] ? MIN(depth[i],depth_ref[i]) : depth[i];
