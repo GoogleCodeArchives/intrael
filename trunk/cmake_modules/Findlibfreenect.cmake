@@ -55,6 +55,7 @@ else (LIBFREENECT_LIBRARIES AND LIBFREENECT_INCLUDE_DIRS)
     NAMES
       freenect
     PATHS
+      /usr/local/lib64
       /usr/lib
       /usr/local/lib
       /opt/local/lib
