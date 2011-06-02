@@ -218,9 +218,9 @@ pthread_mutex_t conf_mutex = PTHREAD_MUTEX_INITIALIZER;
 			    }
 #define RSWITCH(ch,optarg) switch (ch) {\
 			    case 'x': if(refcount==-1)refcount=1;\
-						  IOPT(optarg,t_x,0,631);\
+						  IOPT(optarg,t_x,0,632);\
 			    case 'X': if(refcount==-1)refcount=1;\
-						  IOPT(optarg,t_X,0,631);\
+						  IOPT(optarg,t_X,0,632);\
 			    case 'y': if(refcount==-1)refcount=1;\
 						  IOPT(optarg,t_y,0,478);\
 			    case 'Y': if(refcount==-1)refcount=1;\
@@ -352,7 +352,7 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp)
 		label = running = ls = le  = rs = rt = re = dz = dZ = dzv = dZv = 0;
 		y = t_y;
 		i = t_x+640*t_y;
-		ni = 640*t_y+632;
+		ni = 640*t_y+t_X;
 		while(1){
 			dp = depth[i];
 		    if(dp > depth_ref_z[i] && dp < depth_ref_Z[i]){ 
@@ -543,8 +543,8 @@ int main(int argc, char **argv)
  char buf[4096];
  unsigned char mbuf[128], mtemp[16];
  
- t_X = 631;
- t_Y = 479;
+ t_X = 632;
+ t_Y = 478;
  t_z = 340;
  t_c = 50;
  lport = 6661;
@@ -661,5 +661,6 @@ int main(int argc, char **argv)
  #if defined WIN32
      WSACleanup();
  #endif
+ 
  return 0;
 }
