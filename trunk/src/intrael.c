@@ -565,7 +565,6 @@ int main(int argc, char **argv)
  FD_ZERO(&master);
  sig_register();
  MD5_CTX *md5=(MD5_CTX *)calloc(1,sizeof(MD5_CTX));
- MD5_Init(md5);
  listeneraddr.sin_addr.s_addr = manageraddr.sin_addr.s_addr = INADDR_ANY;
  
  while ((ch = getopt(argc, argv, "p:P:z:Z:x:X:y:Y:w:W:h:H:d:D:t:T:q:Q:p:P:s:S:o:b:m:a:A:i:c:C:B:O:R:l:L:v")) != -1) {
@@ -617,7 +616,8 @@ int main(int argc, char **argv)
 						 else if(strlen(buf)>32 && client->t && strlen(secret)){
 			 			 		 if(!client->hash){
 								 client->hash=(char *)malloc(32);
-								 MD5_Update(md5,mbuf,sprintf((char *)mbuf,"%s,%s%u,%u",secret,client->sid,client->c,client->t));
+                         MD5_Init(md5);
+   							 MD5_Update(md5,mbuf,sprintf((char *)mbuf,"%s,%s%u,%u",secret,client->sid,client->c,client->t));
 								 MD5_Final(mtemp, md5);
 								 for(ch = 0; ch < 16; ch++) sprintf(&client->hash[2*ch],"%02x",mtemp[ch]);
 								
