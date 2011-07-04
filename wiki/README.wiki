@@ -20,7 +20,7 @@ Found objects are analyzed and detailed 3D bounding boxes are measured
 for each of them. 24+ objects can be tracked at fluid frame rates.
 
 The collected data are made available to network clients through polling
-as raw delimited text or as JSON-P HTTP responses for use in browsers.
+as delimited text or as JSON-P HTTP responses for use in browsers.
 
 The developer just has to include a javascript on his pages to enable
 the handling of the stream from the server running localy on the client.
