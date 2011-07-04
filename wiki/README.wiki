@@ -124,8 +124,8 @@ After that, the Kinect LED should start blinking green. Now there will be two ad
     Forces a reload of the dump file (if that was enabled by the -b option at the command line). 
     Needs the -r option to work if called from the management interface. It is assumed at startup.
 
-*-O* INT::
-    Forces a (synced) dump of the current depth & rgb frames (if a directory was enabled by the -o option at the command line). The files will be named <INT>.pgm and <INT>.pnm respectively. Also needs the -r option if called from the management interface. It is assumed at startup.
+*-O* FRAME_INT::
+    Forces a (synced) dump of the current depth & rgb frames (if a directory was enabled by the -o option at the command line). The files will be named (FRAME_INT).pgm and (FRAME_INT).pnm respectively. Also needs the -r option if called from the management interface. It is assumed at startup.
 
 *-x* INT::
     Specifies the lower bound of the raster scan for the X axis(0-639, default 0).
