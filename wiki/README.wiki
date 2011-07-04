@@ -92,8 +92,11 @@ After that, the Kinect LED should start blinking green. Now there will be two ad
 *-b* FILE_STRING::
     Specifies a dump file to load as the reference frame
 
-*-o* FILE::
+*-o* DIR::
     Specifies the directory path where snapshots from the depth & rgb camera should be stored.
+
+*-M* BYTES::
+    Specifies the maximum packet size. The default is 3948 which keeps packets below 4k and provides for 24+ distinct objects. Increase it at your own risk for more objects.
 
 *ALL THE FOLLOWING OPTIONS CAN ALSO BE CHANGED DURING OPERATION VIA THE MANAGEMENT INTERFACE*
 
