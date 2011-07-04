@@ -50,8 +50,17 @@ To use CMake:
 
 You'll have to define the location of the pthreads lib and header files by hand.
 
-Follow the same instructions that are provided by libfreenect on the link above.
+*Driver installation(skip if installed with libfreenect)*
 
+Windows 7: step-by-step walkthrough (should also work with Windows XP!)
+
+Plug in your Kinect. Windows will warn that no device driver was found for the plugged device (the LED of Kinect will not turn on). If Windows presents a dialog asking to search for drivers, simply cancel it.
+
+Open the Device Manager: Start >> Control Panel >> System and Security >> System >> Device Manager A device called "Xbox NUI Motor" should be somewhere there (most probably be under "Other devices") with a small yellow warning symbol "!" on top of its icon. Right click on it, and select "Update Driver Software...", then click on "Browse my computer for driver software".
+
+"Browse" and select the folder where the "XBox_NUI_Motor.inf" is located (inf/ inside the intrael folder). Click "Next" and if warned by Windows that a non-certified driver is about to be installed, just order it to install it anyway.
+
+After that, the Kinect LED should start blinking green. Now there will be two additional devices in the Device Manager list: "Xbox NUI Camera" and "Xbox NUI Audio". Repeat the above instructions for them as well.
 
 
 ==OPTIONS==
@@ -70,6 +79,9 @@ Follow the same instructions that are provided by libfreenect on the link above.
 
 *-k* DEVICE_INT::
     Specifies the kinect device to use if there are more than one (Default is 0).
+
+*-K* INT::
+    Specifies the mode for the rgb camera. 0-Disabled, 1-640x480, 2-1280x1024 (Default is 0).
     
 *-s* SECRET_STRING::
     Specifies the secret passphrase for use in the management interface (See below).
@@ -78,10 +90,10 @@ Follow the same instructions that are provided by libfreenect on the link above.
     Specifies a file that contains the secret passphrase (See previous option).
 
 *-b* FILE_STRING::
-    Specifies a dump file to load as the reference frame (See next option)
+    Specifies a dump file to load as the reference frame
 
 *-o* FILE::
-    Specifies the file path where a dump of the reference frame should be stored.
+    Specifies the directory path where snapshots from the depth & rgb camera should be stored.
 
 *ALL THE FOLLOWING OPTIONS CAN ALSO BE CHANGED DURING OPERATION VIA THE MANAGEMENT INTERFACE*
 
@@ -109,9 +121,8 @@ Follow the same instructions that are provided by libfreenect on the link above.
     Forces a reload of the dump file (if that was enabled by the -b option at the command line). 
     Needs the -r option to work if called from the management interface. It is assumed at startup.
 
-*-O*::
-    Forces a rewrite of the dump file (if that was enabled by the -o option at the command line).
-    Also needs the -r option if called from the management interface. It is assumed at startup.
+*-O* INT::
+    Forces a (synced) dump of the current depth & rgb frames (if a directory was enabled by the -o option at the command line). The files will be named <INT>.pgm and <INT>.pnm respectively. Also needs the -r option if called from the management interface. It is assumed at startup.
 
 *-x* INT::
     Specifies the lower bound of the raster scan for the X axis(0-639, default 0).
@@ -177,78 +188,11 @@ Follow the same instructions that are provided by libfreenect on the link above.
     Specifies the greatest density (pixel count / width in px*height in px) for an object to pass(0-1, default 0, disabled).
 
 
-==CALIBRATION & SCRIPTING==
+==SCRIPTING==
 
-The main web site http://www.intrael.com is essentially a calibration application tha allows users to define the boundaries 
-of their screen. If you run the server at the same machine as the client(browser) and the default port then you should be ok.
-If that is not the case, you can pass a "server" query argument at the url to specify to the script the host it should connect.
-This argument should be in the form http://some_ip:some_port, url encoded off course. The default is http://127.0.0.1:6661 
+The base script is http://www.intrael.com/scripts/intrael.js and should be included in your page's head. You can see how it's used on  http://www.intrael.com/test which is a testing facility for the server's output. 
 
-You can also pass an "id" query arg to define distinct sets of configurations. The default id is 1. This could be used in 
-conjunction with the instance identifier specified with the *-i* option to setup and calibrate multi kinect installations.
-
-To start off you must click the top label and a target will appear. You then have an indicated amount of time to set the object of
-your liking(hand, body, dog or whatever) at the location you deem appropriate as the corresponding corner from your applications POV.
-You can pass a "count" query argument on the page url to specify the timeout for the object selection. Default is 30( approx 1 sec).
-
-If multiple points exist at the timeout, the last one will be chosen by default(generally the lower right from the kinect's POV)
-You can fine tune the selection process by passing one of the following values as the "mode" query argument on the page's url:
- 
-* x * = Select the object that has the lowest X coordinate.
-
-* X * = Select the object that has the greatest X coordinate.
-
-* y * = Select the object that has the lowest Y coordinate.
-
-* Y * = Select the object that has the greatest Y coordinate. 
-
-* z * = Select the object that has the lowest Z coordinate.
-
-* Z * = Select the object that has the greatest Z coordinate.
-
-* c * = Select the object that has the lowest Z coordinate on it's central point(see protocol).
-
-* c * = Select the object that has the greatest Z coordinate on it's central point.
-
-* p * = Select the object with the smallest pixel count.
-
-* P * = Select the object with the greatest pixel count.
-
-* a * = Select the object with the smallest average depth.
-
-* A * = Select the object with the greatest average depth.
-
-
-
-When all four points have been defined the helper script will be able to recollect them, *even on other domains*. All you need is 
-a script tag calling http://www.intrael.com/scripts/intrael.js in your page's head. You can see how it's used on the main page 
-itself as well as in http://www.intrael.com/test which is a testing facility for the server's output. Your app can take notice of
-the calibration by passing it a function as the parameter "confighandler" on the options object passed to the Intrael.init() method. 
-This function takes one argument that's either 0 for a local config(cookies originating from the same domain) or 1 if the cookies are
-fetched from the main intrael website. In the first case the function call will trigger immediately after the call to Intrael.init()
-while in the remote case it will happen asynchonously. In both cases when the functions trigger it means that the Intrael.localConfig
-or Intrael.remoteConfig objects, respectively, while have been set and you can access them. If either of these are null it means that
-there was no config available. If there was an object it will have one or more numeric keys(those specified by the "id" query argument)
-each reffering to an object that consists of the following properties:
-
- 
-* offsetX * = The X offset of the browser viewport(Regardless of browser chrome) as measured by the calibration page when the calibration took place.
-
- 
-* offsetY * = The Y offset of the browser viewport(Regardless of browser chrome) as measured by the calibration page when the calibration took place.
-
- 
-* src * = An array of 4 elements representing the screen coordinates at the time of the calibration. Each of these 4 coords are in the form of [X,Y] arrays.
-
- 
-* dst * = An array of 4 elements representing the detected objects that correspond to the screen corners. These are 32 element arrays each and described below.
-
- 
-* uri * = A string with the host:port you had specified at calibration
-
-
-
-You can also pass a "server" property to the *options* object to redefine the server host and an "errorhandler" function to catch connection errors.
+You can pass a "server" property to the *options* object to redefine the server host and an "errorhandler" function to catch connection errors.
 
 To actually use the server data you must provide a processing function as the value of the property "inputhandler" param in the *options*
 object you pass on Intrael.init(). That function takes one argument described below. You then call Intrael.fetch() and the polling begins.
@@ -256,14 +200,13 @@ object you pass on Intrael.init(). That function takes one argument described be
 
 ==PROTOCOL==
 
-The server responses are numeric arrays wrapped in HTTP headers and an *Intrael.p0([...])* method for the JS glue.
+The server responses are numeric arrays wrapped in HTTP headers and an *Intrael.p([...])* method for the JS glue.
 The format consists of a header with 32 elements along with several 32-element packs that describe distinct objects.
 The header format is(single letter identifiers refer to option values set via the command line or management console):
 
-*(frame count since startup), (timestamp), (identifier), m, x, X, y, Y, z, Z, w, W, h, H, f,F,d, D, t, T, c, C, q, Q, a, A,
+*(frame count since startup), (timestamp), (identifier), K, O, m, x, X, y, Y, z, Z, w, W, h, H, f,F,d, D, t, T, c, C, q, Q,
 (accelerometer_x), (accelerometer_y), (accelerometer_z), (current angle), (current motor state), (total objects found)*
 
-The accelerometer, current angle and motor states will be updated only if the *-A* option is set to 1.
 The motor state values correspond to the following three states. *0-Stopped, 1-Reached limits, 4-Moving*.
 
 Each of the following 32-element packs begin with seven 4-element subpacks describing the extrema pairs of 
