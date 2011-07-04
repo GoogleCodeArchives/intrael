@@ -22,7 +22,7 @@ for each of them. 24+ objects can be tracked at fluid frame rates.
 The collected data are made available to network clients through polling
 as raw delimited text or as JSON-P HTTP responses for use in browsers.
 
-The programmer just has to include a javascript on his pages to enable
+The developer just has to include a javascript on his pages to enable
 the handling of the stream from the server running localy on the client.
 
 The main site serves as a facility for the calibration of screen coords
