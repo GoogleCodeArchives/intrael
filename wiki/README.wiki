@@ -11,22 +11,7 @@
 ==DESCRIPTION==
 
 Intrael is a portable app server that processes depth data from a kinect
-and identifies objects using several configurable selection criteria.
-
-It is based on an algorithm for run-based component labeling described
-by He, Chao, Suzuki and Itoh which provides excellent performance.
-
-Found objects are analyzed and detailed 3D bounding boxes are measured 
-for each of them. 24+ objects can be tracked at fluid frame rates.
-
-The collected data are made available to network clients through polling
-as delimited text or as JSON-P HTTP responses for use in browsers.
-
-The developer just has to include a javascript on his pages to enable
-the handling of the stream from the server running localy on the client.
-
-The main site serves as a facility for the calibration of screen coords
-which can then be fetched by the helper script on other domains.
+and tracks objects using several configurable selection criteria.
 
 ==INSTALL==
 === Requirements ===
@@ -68,20 +53,14 @@ After that, the Kinect LED should start blinking green. Now there will be two ad
 *-p* PORT_INT::
     Specifies the port of the HTTP listener (Default is 6661).
 
-*-P* PORT_INT::
-    Specifies the port of the management listener (Default is 0, disabled).
-
 *-l* ADDRESS_STRING::
     Forces the HTTP listener to bind on the supplied address.
-
-*-L* ADDRESS_STRING::
-    Forces the management listener to bind on the supplied address.
 
 *-k* DEVICE_INT::
     Specifies the kinect device to use if there are more than one (Default is 0).
 
 *-K* INT::
-    Specifies the mode for the rgb camera. 0-Disabled, 1-640x480, 2-1280x1024 (Default is 0).
+    Specifies the mode for the rgb camera. 0-Disabled, 1-Enabled, 2-Registered (Default is 0).
     
 *-s* SECRET_STRING::
     Specifies the secret passphrase for use in the management interface (See below).
@@ -90,42 +69,25 @@ After that, the Kinect LED should start blinking green. Now there will be two ad
     Specifies a file that contains the secret passphrase (See previous option).
 
 *-b* FILE_STRING::
-    Specifies a dump file to load as the reference frame
+    Specifies a dump file to load as the background frame
 
 *-o* DIR::
-    Specifies the directory path where snapshots from the depth & rgb camera should be stored.
+    Specifies a dump file to save the background frame into
 
 *-M* BYTES::
-    Specifies the maximum packet size. The default is 3948 which keeps packets below 4k and provides for 24+ distinct objects. Increase it at your own risk for more objects.
+    Specifies the maximum packet size. The default is 4096 and provides for 24+ distinct objects. Increase it at your own risk for more objects.
 
-*ALL THE FOLLOWING OPTIONS CAN ALSO BE CHANGED DURING OPERATION VIA THE MANAGEMENT INTERFACE*
+*ALL THE FOLLOWING OPTIONS CAN ALSO BE CHANGED DURING OPERATION*
 
 *-m* INT::
-    Specifies the mode of operation. If the value is -1  the depth threshold (specified by the -z,-Z options)
-    refers to the reference frame and only scans objects at distances *relative to the reference frame scenery*.
-    If the value is 0 everything in the depth threshold *relative to the camera* will be tracked including the
-    objects that were present at the time the reference frame was taken. A positive non-zero value works like
-    the zero one but all objects that were on the reference frame will not be tracked (-1 to 9999. Default 0).
+    Specifies the mode of operation. If the value is 0 everything in the depth threshold *relative to the camera* will be tracked including the
+    objects that were present at the time the reference frame was taken. A positive non-zero value works like the zero one but all objects that were on the reference frame will not be tracked (-1 to 9999. Default 0).
 
 *-r* INT::
     Specifies the number of frames that should be processed to create the reference frame(1-60, default 30).
 
 *-a* INT::
     Moves the kinect motor to the specified angle.(-31 to 31, default 0).
-
-*-A* INT::
-    Toggles the polling of accelerometer values and motor state(0-1, default 0,disabled).
-
-*-i* INT::
-    Specifies the instance identifier. That's a user defined 31 bit unsigned integer that does not affect
-    operation. It is usefull if one wishes to use input from several servers on the same page(default 0).
-
-*-B*::
-    Forces a reload of the dump file (if that was enabled by the -b option at the command line). 
-    Needs the -r option to work if called from the management interface. It is assumed at startup.
-
-*-O* FRAME_INT::
-    Forces a (synced) dump of the current depth & rgb frames (if a directory was enabled by the -o option at the command line). The files will be named (FRAME_INT).pgm and (FRAME_INT).pnm respectively. Also needs the -r option if called from the management interface. It is assumed at startup.
 
 *-x* INT::
     Specifies the lower bound of the raster scan for the X axis(0-639, default 0).
@@ -146,7 +108,7 @@ After that, the Kinect LED should start blinking green. Now there will be two ad
     Specifies the upper depth limit in millimetres that should be scanned(0-9999, default 340).
 
 
-*The following options refer to selection criteria for objects after the raster scan has completed*
+*The following options refer to selection criteria for the filtering of objects*
 
 *-c* INT::
     Specifies the lowest pixel count for an object to pass(0-4000000, default 50).
@@ -190,25 +152,21 @@ After that, the Kinect LED should start blinking green. Now there will be two ad
 *-Q* FLOAT::
     Specifies the greatest density (pixel count / width in px*height in px) for an object to pass(0-1, default 0, disabled).
 
+*-u* FLOAT::
+    Specifies the lowest bound for a value that defines how uniform an object is(0-1, default 0, disabled).
 
-==SCRIPTING==
-
-The base script is http://www.intrael.com/scripts/intrael.js and should be included in your page's head. You can see how it's used on  http://www.intrael.com/test which is a testing facility for the server's output. 
-
-You can pass a "server" property to the *options* object to redefine the server host and an "errorhandler" function to catch connection errors.
-
-To actually use the server data you must provide a processing function as the value of the property "inputhandler" param in the *options*
-object you pass on Intrael.init(). That function takes one argument described below. You then call Intrael.fetch() and the polling begins.
-
+*-U* FLOAT::
+    Specifies the upper bound for a value that defines how uniform an object is(0-1, default 0, disabled).
 
 ==PROTOCOL==
 
-The server responses are numeric arrays wrapped in HTTP headers and an *Intrael.p([...])* method for the JS glue.
+The server response is a json array wrapped as an HTTP responses.
 The format consists of a header with 32 elements along with several 32-element packs that describe distinct objects.
-The header format is(single letter identifiers refer to option values set via the command line or management console):
 
-*(frame count since startup), (timestamp), (identifier), K, O, m, x, X, y, Y, z, Z, w, W, h, H, f,F,d, D, t, T, c, C, q, Q,
-(accelerometer_x), (accelerometer_y), (accelerometer_z), (current angle), (current motor state), (total objects found)*
+The header format is(single letter identifiers refer to the option values set via the command line or management console):
+
+
+* (timestamp), (last update stamp), K, m, x, X, y, Y, z, Z, w, W, h, H, f,F,d, D, t, T, c, C, q, Q,u,U,(accelerometer_x), (accelerometer_y), (accelerometer_z), (current angle), (current motor state), (total objects found before filtering)*
 
 The motor state values correspond to the following three states. *0-Stopped, 1-Reached limits, 4-Moving*.
 
@@ -219,16 +177,17 @@ The 29th element is the object's average depth, 30th is the object's pixel count
 that comprise this object and the 32nd is the irregularity of the object(THE LAST TWO NEED CLARIFICATION)
 
 
-==MANAGEMENT INTERFACE==
+|| No || HEADER || OBJECTS ||
+|| || ||
+|| 0 || Timestamp || Lower X-axis point, X coordinate||
 
-You can enable the management console by setting the *-P* option to a non-zero value. By doing that you'll
-be able to connect to a simple TCP/IP server on the specified port. Sending a "\n" will return the same data
-as the HTTP listener, without the HTTP headers and JSON-P glue. In addition you'll get one more element, the
-first in each response, which is the connection ID of your connection. To be able to make live config changes
-you must take the secret(specified on the command line with the *-s/-S* options) along with the (connection ID),
-(frame count) and (timestamp) from the first response after connecting (*WARNING: The numbers on responses after
-the first are irrelevant*), join them with commas, MD5 them and use the hash as the first argument of your request.
-All the subbsequent, space-separated, arguments will be parsed similarly to the command line options. For example,
+==LIVE CONFIG CHANGES==
+
+In order to make live config changes you must take the secret(specified on the command line with the *-s/-S* options) along with the current (Last update stamp) from the response header join and MD5 hash them. You can then construct a request of the form:
+
+GET /0(hash)/c200/C1000/...
+
+All subbsequent, slash-separated, arguments will be parsed similarly to the command line options. For example,
 if the values are *MY_Secr3t,13,123673,33435353423*  you can send a *765bb7a303dee57932de74a39465aec8 z400 Z750 r1\n*
 to set the lower and upper depth thresholds respectively. The option arguments must be inseparable from the option
 letter. The *m,x,X,y,Y,z,Z* options will force a new reference frame to be taken and the threshold maps recalculated.
