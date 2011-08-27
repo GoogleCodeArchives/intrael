@@ -177,24 +177,6 @@ The 29th element is the object's average depth, 30th is the object's pixel count
 that comprise this object and the 32nd is the irregularity of the object(THE LAST TWO NEED CLARIFICATION)
 
 
-|| No || HEADER || OBJECTS ||
-|| || ||
-|| 0 || Timestamp || Lower X-axis point, X coordinate||
-
-==LIVE CONFIG CHANGES==
-
-In order to make live config changes you must take the secret(specified on the command line with the *-s/-S* options) along with the current (Last update stamp) from the response header join and MD5 hash them. You can then construct a request of the form:
-
-GET /0(hash)/c200/C1000/...
-
-All subbsequent, slash-separated, arguments will be parsed similarly to the command line options. For example,
-if the values are *MY_Secr3t,13,123673,33435353423*  you can send a *765bb7a303dee57932de74a39465aec8 z400 Z750 r1\n*
-to set the lower and upper depth thresholds respectively. The option arguments must be inseparable from the option
-letter. The *m,x,X,y,Y,z,Z* options will force a new reference frame to be taken and the threshold maps recalculated.
-The response you'll get right after live changes will probably don't have the new config. The next be ok though.
-
-*WARNING: THE MANAGEMENT INTERFACE DOES NOT GUARANTEE THE APPLICATION OF CHANGES FROM MULTIPLE CONCURRENT MANAGERS*
-
 
 ==AUTHOR==
 
