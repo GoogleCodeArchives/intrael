@@ -2,19 +2,21 @@
 # License
 ######################################################################################
 
-# This file is part of the Intrael Project. http://www.infrael.com
-#
-# Copyright (c) 2011 Yannis Gravezas.
-#
-# This code is licensed to you under the terms of the GNU General Public License,
-# version 3.0. See the GPL3 files for the text of the license,
-# or visit http://www.gnu.org/licenses/gpl-3.0.txt
-#
-# If you redistribute this file in source form, modified or unmodified, you
-# must keep the copyright notice intact and include
-#
-# Binary distributions must follow the binary distribution requirements of
-# the GPL3 License.
+# This file is part of the Intrael Project which provides computer vision for the web.
+#Copyright (C) 2011 Yannis Gravezas. You can contact the author at wizgrav@gmail.com.
+
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License v3 for more details.
+
+#You should have received a copy of the GNU General Public License v3
+#along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
 
 ######################################################################################
 # CMake directives
@@ -28,17 +30,17 @@ cmake_minimum_required(VERSION 2.6)
 # Project declaration and options
 ######################################################################################
 
-PROJECT(Infrael)
+PROJECT(Intrael)
 
-set (PROJECT_VER_MAJOR 0)
+set (PROJECT_VER_MAJOR 1)
 set (PROJECT_VER_MINOR 0)
-set (PROJECT_VER_PATCH 1)
+set (PROJECT_VER_PATCH 0)
 set (PROJECT_VER 
   "${PROJECT_VER_MAJOR}.${PROJECT_VER_MINOR}.${PROJECT_VER_PATCH}")
 
-IF(PROJECT_OS_LINUX)
-	OPTION(BUILD_CPACK "Build an RPM or DEB using CPack" OFF)
-ENDIF(PROJECT_OS_LINUX)
+OPTION(COMPILE_SSE2 "Use Intel SSE2 instruction set" ON)
+OPTION(COMPILE_NEON "Use Arm NEON instruction set" OFF)
+OPTION(COMPILE_MORE_NEON "Use more NEON, possibly degrading performance" OFF)
 
 ######################################################################################
 # CMake Modules
@@ -52,16 +54,8 @@ include (FindOS)
 include (SetupDirectories)
 
 # Find packages needed to build library
-IF(WIN32)
-  set(THREADS_USE_PTHREADS_WIN32 true)
-ENDIF(WIN32)
-find_package(Threads REQUIRED)
-IF(WIN32)
-	include_directories(${THREADS_PTHREADS_INCLUDE_DIR})
-ENDIF(WIN32)
 find_package(libfreenect REQUIRED)
-include_directories(${LIBFREENECT_INCLUDE_DIRS})
-
+find_package(libjpeg REQUIRED)
 
 ######################################################################################
 # CMake 
@@ -71,10 +65,24 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 SET(DOC_OUTPUT_PATH ${CMAKE_BINARY_DIR}/doc)
 
 if(CMAKE_C_FLAGS STREQUAL "")
-  set(CMAKE_C_FLAGS "-O3 -ffast-math")
+  set(CMAKE_C_FLAGS "-O3")
 endif()
 add_definitions(-Wall)
 
+IF ( COMPILE_SSE2 )
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -msse2")
+	add_definitions(-DUSE_SSE2)
+ENDIF ( COMPILE_SSE2 )
+
+IF ( COMPILE_NEON )
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -mfpu=neon")
+	add_definitions(-DUSE_NEON)
+ENDIF ( COMPILE_NEON )
+
+IF ( COMPILE_MORE_NEON )
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -mfpu=neon")
+	add_definitions(-DUSE_MORE_NEON)
+ENDIF ( COMPILE_MORE_NEON )
 
 add_subdirectory (src)
 
@@ -90,32 +98,3 @@ configure_file(
 
 add_custom_target(uninstall
   COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/UninstallTarget.cmake)
-
-# Create Debian/RPM Packages
-# after make, use "fakeroot cpack" in the build Dir to complete
-
-IF ( BUILD_CPACK )
-  set(CPACK_PACKAGE_DESCRIPTION "Intrael")
-  set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Computer vision for the web")
-  set(CPACK_PACKAGE_NAME "Intrael")
-  set(CPACK_DEBIAN_PACKAGE_DEPENDS "libfreenect")
-
-  set(CPACK_PACKAGE_CONTACT "Yannis Gravezas <wizgrav@intrael.com>")
-  #set(CPACK_PACKAGE_VENDOR "")
-  set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VER_MAJOR})
-  set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VER_MINOR})
-  set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VER_PATCH})
-  set(VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
-
-  set(CPACK_GENERATOR "DEB;RPM;")
-  set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}-${CMAKE_SYSTEM_PROCESSOR}")
-
-  include(CPack)
-
-  INSTALL(FILES "${CMAKE_BINARY_DIR}/bin/intrael" DESTINATION ${PROJECT_BINARY_INSTALL_DIR})
-  INSTALL(FILES "GPL3.txt" DESTINATION "share/doc/${CPACK_PACKAGE_NAME}")
-  INSTALL(FILES "README.asciidoc" DESTINATION "share/doc/${CPACK_PACKAGE_NAME}")
-  INSTALL(FILES "MANUAL.asciidoc" DESTINATION "share/doc/${CPACK_PACKAGE_NAME}")
-
-ENDIF ( BUILD_CPACK )
-
