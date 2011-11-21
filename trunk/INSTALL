@@ -1,0 +1,79 @@
+
+==INSTALL==
+=== Requirements ===
+
+- libfreenect > 1.1 (All platforms) http://openkinect.org/wiki/Getting_Started
+   *1.1 is not suitable. As of this writing you'll need the unstable branch. 
+- libjpeg or, preferably, libjpeg-turbo http://libjpeg-turbo.virtualgl.org
+- Cmake >= 2.6 (All platforms) http://www.cmake.org
+
+=== Basic Compiling Instructions ===
+
+To use CMake:
+
+- Make a directory somewhere, like 'build' in your repo directory.
+- Go into that directory
+- Type cmake ..
+- Run make
+
+If you have an SSE2(Intel) or NEON(Arm) enabled cpu you should set the option COMPILE_SSE2
+or COMPILE_NEON to ON in the CMakeLists.txt file on the project root dir. They help alot.
+
+=== Windows platform specifics ===
+
+Follow the same instructions that are provided by libfreenect on the link above.
+The usb drivers provided by libfreenect are also included in intrael binary dists.
+
+===== Driver installation(Skip if already done while installing libfreenect) =====
+
+Plug in your Kinect. Windows will warn that no device driver was found for the plugged device (the LED of Kinect will not turn on). If Windows presents a dialog asking to search for drivers, simply cancel it.
+
+Open the Device Manager: Start >> Control Panel >> System and Security >> System >> Device Manager
+
+A device called "Xbox NUI Motor" should be somewhere there (most probably be under "Other devices") with a small yellow warning symbol "!" on top of its icon. 
+
+Right click on it, and select "Update Driver Software...", then click on "Browse my computer for driver software".
+
+"Browse" and select the folder where the "XBox_NUI_Motor.inf" is located (/drivers inside the bundle containing intrael). 
+
+Click "Next" and if warned by Windows that a non-certified driver is about to be installed, just order it to install it anyway.
+
+After that, the Kinect LED should start blinking green. Now there will be two additional devices in the Device Manager list: "Xbox NUI Camera" and "Xbox NUI Audio". 
+
+Repeat the above instructions for them as well.
+
+
+=== Linux platform specifics ===
+
+To run intrael as non-root, copy the file 51-kinect.rules to /etc/udev/rules.d/
+
+
+==AUTHOR==
+
+Intrael was written by Yannis Gravezas <wizgrav@intrael.com>
+
+
+==RESOURCES==
+
+Main web site: http://www.intrael.com
+
+Google code page: http://code.google.com/p/intrael
+
+
+==COPYING==
+
+This file is part of the Intrael Project which provides computer vision for the web.
+Copyright (C) 2011 Yannis Gravezas. You can contact the author at wizgrav@gmail.com.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License v3 for more details.
+
+You should have received a copy of the GNU General Public License v3
+along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
