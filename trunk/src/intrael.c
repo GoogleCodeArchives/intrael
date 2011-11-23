@@ -764,7 +764,7 @@ void depth_cb(freenect_device* dev, void *v_depth, uint32_t timestamp){
 				UNPACK();
 				#if defined USE_SSE2
 				if(_mm_movemask_epi8(mz)){
-				#elif USE_MORE_NEON
+				#elif defined USE_MORE_NEON
 				uint8x8_t m8=vqmovn_u16(mz);
 				uint32x2_t m32 = vreinterpret_u32_u8(m8);
 				uint32x2_t mmm = vpadd_u32(m32,m32);
