@@ -437,7 +437,7 @@ int die = 0;
 	    case 'c': IOPT(optarg,t_c,1,FRAME_PIXELS);\
 	    case 'C': IOPT(optarg,t_C,0,FRAME_PIXELS);\
 	    case 'e': if(refcount < 1) refcount=1;\
-				  IOPT(optarg,mode,-1,1054);\
+				  IOPT(optarg,mode,-1054,1054);\
 	    case 'r': IOPT(optarg,refcount,1,999);\
 	    case 'f': if(!lfile) break;\
 				  if((fp = fopen(lfile,"rb"))){\
