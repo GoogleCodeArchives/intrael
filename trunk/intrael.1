@@ -27,7 +27,7 @@ Sets the port the server should listen to. Default is 6661.
  Sets the JPEG quality. Range is 25-75. Default is 50.
 .TP 
 \fB-m \fIMASK\fR
- The first 3 bits of the provided integer MASK toggle multipart output for data, grayscale(depth)JPEG and rgb JPEG output respectively. Multipart data responses are handled correctly only on firefox(By setting the property multipart as true on the xmlhttprequest object). In the case of the JPEG outputs it toggles bettween single images and MJPEG streaming. Range is 0-7. Default is 6 which means: poll for data(no multipart) and MJPEG streams for both cameras.
+ The first 3 bits of the provided integer MASK toggle Server Sent Events for data and MJPEG for grayscale(depth)JPEG and rgb JPEG outputs, respectively. SSE does not, as of this writing, support cross origin on any browser so the only way to test it is by using the option "-t" below. Range is 0-7. Default is 6 which means: poll for data(no SSE) and MJPEG streams for both cameras.
 .TP
 \fB-s \fISECRET\fR
  Sets a secret passphrase to be used for securing the live config functionality of the server.  A value of "0" enables the feature but without the need to authenticate. Live config changes are disabled by default.
@@ -44,16 +44,21 @@ Sets the port the server should listen to. Default is 6661.
 \fB-i \fIFILE\fR
  Reads the contents of the specified file to form a whitelist of IPs that can connect to the server from a comma separated list. Default is to allow all IPs.
 .TP
+\fB-t \fIFILE\fR
+ Serves the contents of the specified file on special path /3 with html Content-type(See USAGE below). Default is not to serve any static contents.
+.TP
 \fB-n\fR
  No rgb video. Disables the rgb camera which gives a small performance boost.
 .TP
 \fB-b\fR
  Big messages. By default the max size for the JSON messages of the server is 4KB which can fit ~25 concurrent blobs per message. This option raises the limit to 16KB allowing ~100 blobs.
-.TP
-\fB The following options can also be changed live through http requests\fP
 .TP 
 \fB-v\fP
  Prints the version of the program.
+
+.TP
+\fB The following options can also be changed live through http requests\fP
+
 
 .TP
 \fB-e \fIINT\fR
@@ -98,6 +103,9 @@ Sets the port the server should listen to. Default is 6661.
 \fB-i \fIDUMMY\fR
  When used in the context of live config(See below), it forces a reload of the IP list from/if the file was specified on startup with the -i option. DUMMY means that an argument has to be passed in the query string but is not taken into account.
 .TP
+\fB-t \fIDUMMY\fR
+ When used in the context of live config(See below), it forces a reload of the contents for static file serving from the file that was specified on startup. DUMMY means that an argument has to be passed in the query string but is not taken into account.
+.TP
 \fB-a \fIANGLE\fR
  Moves the motor to the specified angle. After the motor moves to the specified position(Indicated by the last element of the HEADER, see below) you should reconstruct the reference frame(-r option) if using background extraction. Range is -31 to 31.
 
@@ -114,6 +122,9 @@ The server speaks the standard http protocol. Clients retrieve the data through 
 .TP
 \fB/2\fR
  This path provides 640x480 RGB JPEGs created from the video camera input. If multipart is enabled through the -m option(it is by default) you'll get an MJPEG stream else single snapshots per request. You'll have to manually shift parts of the depth JPEGs to match the rgb camera using the value provided as the last element of the data pack for each blob(See BLOB FORMAT below). The x and y shifting modifiers can be derived from this value like this: y=<VAL>/640 and x=<VAL>%640.  If the rgb functionality was disabled with the use of the -n command line option, the regular JSON response will be returned instead.
+.TP
+\fB/3\fR
+ This path serves a static html file if it was specified on the command line with the -t option, otherwise it's the default JSON response.
 .TP
 \fBNOTICE\fR
  If several requests to the server have exactly the same paths, the browser will serialize the requests lowering the effective rate for each request. To avoid that you should request a unique path for every simultaneous request. Only the first character matters for selecting the type of data returned. So, a path of "/test3243434" will return the tracking data, a "/1dfdfdfdf" will return grayscale JPEGs and a "0ertdgf?z=..." will perform live changes.
