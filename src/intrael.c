@@ -156,7 +156,6 @@ int die = 0;
 #endif
 
 #define FRAME_PIXELS 307200
-#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MAX(x1,x2) ((x1) > (x2) ? (x1):(x2))
 #define MIN(x1,x2) ((x1) < (x2) ? (x1):(x2))
 #define HASH(d)\
@@ -202,8 +201,6 @@ int die = 0;
 		 FD_SET(client->s,&streaming);\
 		 FD_SET(client->s,&master);\
 		 client->t=type;\
-		 client->k=0;\
-		 client->f=0;\
 		 fdmax=MAX(client->s,fdmax);\
 	}
 #define ASSIGN()\
@@ -386,15 +383,20 @@ int die = 0;
 	   ERR("[ERR8] Could not open file for reading",' ')\
 	   break;\
 	}\
-	if((itmp=fread(fbuf,1,16383,fp)) < 1){\
-	fclose(fp);\
-	break;\
+	fseek(fp,0,SEEK_END);\
+	itmp=ftell(fp);\
+	fseek(fp,0,SEEK_SET);\
+	if(!itmp){\
+		fclose(fp);\
+		break;\
 	}\
+	fbuf=(char *)malloc(itmp+1);\
+	itmp=fread(fbuf,1,itmp,fp);\
 	fclose(fp);\
 	fbuf[itmp]='\0'
 #define CSWITCH(ch,optarg)\
 	switch (ch) {\
-		case 'p': IOPT(optarg,lport,1,65535);\
+		case 'p': IOPT(optarg,lport,1,65534);\
 		case 'l': listeneraddr.sin_addr.s_addr = inet_addr(optarg);\
 				break;\
 		case 'd': if(strlen(optarg) > 1){\
@@ -403,7 +405,7 @@ int die = 0;
 				  }\
 				  IOPT(optarg,camera,0,9);\
 		case 'h':\
-		case 'v': printf("\nIntrael v%d.%d (C) 2011 Yannis Gravezas. Info @ http://www.intrael.com\nThis software is being licenced to you under the terms of the GPL v3\nKinect driver is provided by libfreenect @ http://www.openkinect.org\nIn memory of my cousin Kostas. We shall meet again on a better world\n\n",VMAJOR,VMINOR);\
+		case 'v': printf("\nIntrael v%d.%d (C) 2011 Yannis Gravezas. Info @ http://www.intrael.com\nThis software is being licenced to you under the terms of the GPL v3\nKinect driver is provided by libfreenect @ http://www.openkinect.org\n\n",VMAJOR,VMINOR);\
 			  return 0;\
 		case 'm': IOPT(optarg,multipart,0,7);\
 		case 'n': novideo=1;\
@@ -422,6 +424,8 @@ int die = 0;
 		case 'o': ofile = strdup(optarg);\
 				  break;\
 		case 'i': ifile = strdup(optarg);\
+				  break;\
+		case 't': tfile = strdup(optarg);\
 				  break;\
 	}
 #define RSWITCH(ch,optarg)\
@@ -476,6 +480,7 @@ int die = 0;
 						LIST_INSERT_HEAD(&origins, origin, entries);\
 						targ=strtok(NULL,",");\
 					}\
+					free(fbuf);\
 					break;\
 		case 'i': 	FOP(ifile);\
 					LIST_FOREACH(host, &hosts, entries){\
@@ -490,6 +495,34 @@ int die = 0;
 							LIST_INSERT_HEAD(&hosts, host, entries);\
 						}\
 						targ=strtok(NULL,",");\
+					}\
+					free(fbuf);\
+					break;\
+		case 't':   if(!tfile) break;\
+					if((fp = fopen(tfile,"rb+"))){\
+						fseek(fp,0,SEEK_END);\
+						itmp=ftell(fp);\
+						fseek(fp,0,SEEK_SET);\
+						if(itmp){\
+							LIST_FOREACH(client, &clients, entries){\
+								if(client->t == 4){\
+									LIST_REMOVE(client,entries);\
+									FD_CLR(client->s,&streaming);\
+									FD_CLR(client->s,&master);\
+									closesocket(client->s);\
+									free(client);\
+								}else if(client->t){\
+									fdmax=MAX(fdmax,client->s);\
+								}\
+							}\
+							if(tbuf) free(tbuf);\
+							tbuf=(char *)malloc(itmp+196);\
+							twritten = sprintf(tbuf,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: text/html\r\nContent-length: %d\r\n\r\n",VMAJOR,VMINOR,itmp);\
+							twritten += fread(tbuf+twritten, 1,itmp, fp);\
+						}\
+						fclose(fp);\
+					}else{\
+						ERR("[ERR9] Could not open test html file",' ');\
 					}\
 					break;\
 	}
@@ -510,7 +543,6 @@ int die = 0;
 				 fdmax=MAX(fdmax,client->s);\
 			}\
 		}else{\
-				client->f=1;\
 				fdmax=MAX(fdmax,client->s);\
 				fdm=MAX(fdm,client->s);\
 		}\
@@ -534,7 +566,7 @@ int die = 0;
     }
 
 typedef struct cli{
-    int b,t,k,f;
+    int b,t;
 	SOCKET s;
 	LIST_ENTRY(cli) entries;
 	LIST_ENTRY(cli) dentries;
@@ -587,7 +619,7 @@ uint8_t video_raw[640*480] __attribute__ ((aligned (16)));
 uint8_t rgb[640*4] __attribute__ ((aligned (16)));
 #endif
 
-char message[16384], *lfile,*sfile,*ofile,*ifile,*secret, *serial, hash[33],buf[4096],cbuf[4096],fbuf[16384];
+char message[16400], *lfile,*sfile,*ofile,*ifile,*tfile,*secret, *serial, hash[33],buf[4096],cbuf[4096],*fbuf,*tbuf;
 unsigned char *mbuf, mtemp[16],pbuf[320*240],gbuf[320*240];
 MD5_CTX *md5;
 struct cli *client;
@@ -597,14 +629,14 @@ struct timeval timeout;
 struct jpeg_compress_struct cinfo,ginfo;
 struct jpeg_error_mgr jerr;
 fd_set master,streaming;
-SOCKET fdmax,dfdmax,vfdmax,gfdmax,listener,newfd;
+SOCKET fdmax,dfdmax,vfdmax,gfdmax,tfdmax,listener,newfd;
 struct sockaddr_in listeneraddr;
 in_addr_t tempaddr;
 struct sockaddr_storage clientaddr;
 socklen_t addrsize;
-uint16_t depth_ref[FRAME_PIXELS],depth_ref_x[FRAME_PIXELS],depth_ref_y[FRAME_PIXELS],depth_to_raw[9999],depth_to_mm[2048],joffset,doffset,goffset, novideo,rawz,rawZ;
-uint32_t run_s[FRAME_PIXELS/2+1],run_e[FRAME_PIXELS/2+1],run_z[FRAME_PIXELS/2+1],run_Z[FRAME_PIXELS/2+1],run_sum[FRAME_PIXELS/2+1],run_label[FRAME_PIXELS/2+1],r_label[FRAME_PIXELS/2+1],l_pos_x[FRAME_PIXELS/2+1],l_pos_X[FRAME_PIXELS/2+1],l_pos_y[FRAME_PIXELS/2+1],l_pos_Y[FRAME_PIXELS/2+1],l_pos_z[FRAME_PIXELS/2+1],l_pos_Z[FRAME_PIXELS/2+1],l_cx[FRAME_PIXELS/2+1],l_cy[FRAME_PIXELS/2+1],l_sum[FRAME_PIXELS/2+1],l_count[FRAME_PIXELS/2+1],l_runs[FRAME_PIXELS/2+1],l_checked[FRAME_PIXELS/2+1],t_x,t_X,t_y,t_Y,t_z,t_Z,t_c,t_C,lport,gstamp,astamp,gdump,t_j,multipart,max_bytes, i,ni,label,running,da,n,l,rs,re,rt,dz,dZ,dzv,dZv;
-int x,y,itmp,camera, refcount,angle,yes,mode,written,jwritten,gwritten,sec,l_vrun[FRAME_PIXELS/2+1];
+uint16_t depth_ref[FRAME_PIXELS],depth_ref_x[FRAME_PIXELS],depth_ref_y[FRAME_PIXELS],depth_to_raw[9999],depth_to_mm[2048],joffset,doffset,goffset,toffset, novideo,rawz,rawZ;
+uint32_t run_s[FRAME_PIXELS/2+1],run_e[FRAME_PIXELS/2+1],run_z[FRAME_PIXELS/2+1],run_Z[FRAME_PIXELS/2+1],run_sum[FRAME_PIXELS/2+1],run_label[FRAME_PIXELS/2+1],r_label[FRAME_PIXELS/2+1],l_pos_x[FRAME_PIXELS/2+1],l_pos_X[FRAME_PIXELS/2+1],l_pos_y[FRAME_PIXELS/2+1],l_pos_Y[FRAME_PIXELS/2+1],l_pos_z[FRAME_PIXELS/2+1],l_pos_Z[FRAME_PIXELS/2+1],l_cx[FRAME_PIXELS/2+1],l_cy[FRAME_PIXELS/2+1],l_sum[FRAME_PIXELS/2+1],l_count[FRAME_PIXELS/2+1],l_runs[FRAME_PIXELS/2+1],l_checked[FRAME_PIXELS/2+1],t_x,t_X,t_y,t_Y,t_z,t_Z,t_c,t_C,lport,gstamp,astamp,gdump,t_j,multipart,max_bytes, i,label,running,da,n,l,rs,re,rt,dz,dZ,dzv,dZv;
+int ni,x,y,itmp,camera, refcount,angle,yes,mode,written,jwritten,gwritten,twritten,sec,l_vrun[FRAME_PIXELS/2+1];
 double ax,az,ay;
 freenect_raw_tilt_state* state;
 freenect_context *f_ctx;
@@ -896,8 +928,13 @@ void depth_cb(freenect_device* dev, void *v_depth, uint32_t timestamp){
 		}
 		gstamp=timestamp;
 		message[written++]=']';
-		memcpy(message+doffset-10,"      ",6);
-		memcpy(message+doffset-10,buf,sprintf(buf,"%d",written-doffset));
+		if(multipart & 1){
+			message[written++]='\n';
+			message[written++]='\n';
+		}else{
+			memcpy(message+doffset-10,"      ",6);
+			memcpy(message+doffset-10,buf,sprintf(buf,"%d",written-doffset));
+		}
 		SEL(dclients,dfdmax,dentries,3,doffset)
 	}else{
 		#if defined WIN32
@@ -1058,7 +1095,7 @@ int main(int argc, char **argv){
 	 lport = 6661;
 	 refcount = angle = 32;
 	 yes = 1;
-	 depth_to_mm[0] = depth_to_mm[2047] = listener   = mode   = camera  = gdump =    dfdmax = vfdmax = gfdmax =  t_x = t_X = t_y = t_Y = t_z = t_Z  = astamp =  novideo = 0;
+	 depth_to_mm[0] = depth_to_mm[2047] = listener   = mode   = camera  = gdump =    dfdmax = vfdmax = gfdmax =  tfdmax = t_x = t_X = t_y = t_Y = t_z = t_Z  = astamp =  novideo = 0;
 	 multipart = 6;
 	 t_j = 50;
 	 max_bytes=4096;
@@ -1067,6 +1104,8 @@ int main(int argc, char **argv){
 	 sfile = NULL;
 	 ofile = NULL;
 	 ifile = NULL;
+	 tfile = NULL;
+	 tbuf=NULL;
 	 secret = NULL;
 	 serial = NULL;
 	 for(i=0;i!=FRAME_PIXELS;i++){
@@ -1081,7 +1120,7 @@ int main(int argc, char **argv){
 	memset(depth,0,640*480*2);
 	memset(l_count,0,sizeof(l_count));
 	listeneraddr.sin_addr.s_addr = INADDR_ANY;
-	while ((i = getopt(argc, argv, "p:z:Z:x:X:y:Y:s:o:m:i:a:c:C:r:l:j:f:e:d:F:k:bhvn")) != -1){
+	while ((i = getopt(argc, argv, "p:z:Z:x:X:y:Y:s:o:m:i:a:c:C:r:l:j:f:e:d:F:k:t:bhvn")) != -1){
 		 CSWITCH(i,optarg);
 		 RSWITCH(i,optarg);		
 	}
@@ -1126,9 +1165,9 @@ int main(int argc, char **argv){
 		depth_to_raw[i]=ni;
 	}
 	depth_to_mm[0] = depth_to_raw[0] = 0;
-	doffset= CHECK_BIT(multipart,0)? sprintf(message,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nConnection: Close\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: multipart/x-mixed-replace; boundary=INTRAEL\r\n\r\n--INTRAEL\r\nContent-Type: application/json\r\nContent-Length:       \r\n\r\n",VMAJOR,VMINOR) : sprintf(message,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/json\r\nContent-Length:       \r\n\r\n",VMAJOR,VMINOR);	
-	goffset=CHECK_BIT(multipart,1) ? sprintf((char *)gbuf,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nConnection: Close\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: multipart/x-mixed-replace; boundary=INTRAEL\r\n\r\n--INTRAEL\r\nContent-type: image/jpeg\r\nContent-length:        \r\n\r\n",VMAJOR,VMINOR):sprintf((char *)gbuf,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: image/jpeg\r\nContent-length:        \r\n\r\n",VMAJOR,VMINOR);
-	joffset=CHECK_BIT(multipart,2) ? sprintf((char *)pbuf,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nConnection: Close\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: multipart/x-mixed-replace; boundary=INTRAEL\r\n\r\n--INTRAEL\r\nContent-type: image/jpeg\r\nContent-length:        \r\n\r\n",VMAJOR,VMINOR):sprintf((char *)pbuf,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: image/jpeg\r\nContent-length:        \r\n\r\n",VMAJOR,VMINOR);
+	doffset= (multipart & 1)? sprintf(message,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: text/event-stream\r\n\r\ndata:",VMAJOR,VMINOR) : sprintf(message,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/json\r\nContent-Length:       \r\n\r\n",VMAJOR,VMINOR);	
+	goffset= (multipart & 2) ? sprintf((char *)gbuf,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nConnection: Close\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: multipart/x-mixed-replace; boundary=INTRAEL\r\n\r\n--INTRAEL\r\nContent-type: image/jpeg\r\nContent-length:        \r\n\r\n",VMAJOR,VMINOR):sprintf((char *)gbuf,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: image/jpeg\r\nContent-length:        \r\n\r\n",VMAJOR,VMINOR);
+	joffset= (multipart & 4) ? sprintf((char *)pbuf,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nConnection: Close\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: multipart/x-mixed-replace; boundary=INTRAEL\r\n\r\n--INTRAEL\r\nContent-type: image/jpeg\r\nContent-length:        \r\n\r\n",VMAJOR,VMINOR):sprintf((char *)pbuf,"HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: image/jpeg\r\nContent-length:        \r\n\r\n",VMAJOR,VMINOR);
 	INITSOCKET(listener);
 	NONBLOCKING(listener);
 	addrsize = sizeof clientaddr;
@@ -1161,12 +1200,13 @@ int main(int argc, char **argv){
 		timeout.tv_usec = 0;
 		rd = master;
 		wr = streaming;
-		ni=((LIST_EMPTY(&dclients) && LIST_EMPTY(&vclients) && LIST_EMPTY(&gclients) && !vfdmax && !dfdmax && !gfdmax)) ? select(fdmax+1, &rd, &wr, NULL,NULL): select(fdmax+1, &rd, &wr, NULL,&timeout);
+		ni=((LIST_EMPTY(&dclients) && LIST_EMPTY(&vclients) && LIST_EMPTY(&gclients) && !vfdmax && !dfdmax && !gfdmax && !tfdmax)) ? select(fdmax+1, &rd, &wr, NULL,NULL): select(fdmax+1, &rd, &wr, NULL,&timeout);
 		if(ni > 0){
 			fdmax = listener;
 			dfdmax=0;
 			vfdmax=0;
 			gfdmax=0;
+			tfdmax=0;
 			LIST_FOREACH(client, &clients, entries){
 			 y=0;
 			 if(FD_ISSET(client->s,&rd)){
@@ -1177,7 +1217,7 @@ int main(int argc, char **argv){
 					 if(client->t){
 						 y=1;
 					 }else{
-						 if(!LIST_EMPTY(&origins)){
+						 if(!LIST_EMPTY(&origins) && !((ni=='3') && tbuf)){
 							 y=1;
 							 strncpy(cbuf,buf,i);
 							 targ=strtok(cbuf," \r\n");
@@ -1238,6 +1278,14 @@ int main(int argc, char **argv){
 							   LIST_INSERT_HEAD(&gclients, client, gentries);
 						  } else if((ni=='2') && !novideo){
 							  LIST_INSERT_HEAD(&vclients, client, ventries);
+						  } else if((ni=='3') && tbuf){
+							  client->t=4;
+							  client->b=0;
+							  FD_SET(client->s,&streaming);
+							  fdmax=MAX(client->s,fdmax);
+							  tfdmax=MAX(client->s,tfdmax);
+							  FD_SET(client->s,&master);
+							  LIST_INSERT_HEAD(&clients,client,entries);
 						  }else{
 							  LIST_INSERT_HEAD(&dclients, client, dentries);
 						  }
@@ -1245,11 +1293,13 @@ int main(int argc, char **argv){
 				}else y = 1;
 			 }else if(FD_ISSET(client->s,&wr)){
 				 switch(client->t){
-					 case 1: STREAM(gbuf,gwritten,goffset,gfdmax,gclients,gentries,CHECK_BIT(multipart,1),66);
+					 case 1: STREAM(gbuf,gwritten,goffset,gfdmax,gclients,gentries,(multipart & 2),66);
 							 break;
-					 case 2: STREAM(pbuf,jwritten,joffset,vfdmax,vclients,ventries,CHECK_BIT(multipart,2),66);
+					 case 2: STREAM(pbuf,jwritten,joffset,vfdmax,vclients,ventries,(multipart & 4),66);
 							 break;
-					 default: STREAM(message,written,doffset,dfdmax,dclients,dentries,CHECK_BIT(multipart,0),71);
+					 case 4: STREAM(tbuf,twritten,0,tfdmax,clients,entries,0,0);
+							 break;
+					 default: STREAM(message,written,doffset,dfdmax,dclients,dentries,(multipart & 1),5);
 							 break;
 				 }
 			 }else{
@@ -1261,6 +1311,7 @@ int main(int argc, char **argv){
 							 break;
 					 case 3: dfdmax=MAX(client->s,dfdmax);
 							 break;
+					 case 4: tfdmax=MAX(client->s,tfdmax);
 					 default: break;
 				 }
 			 }
