@@ -32,9 +32,9 @@ add_executable (intrael ${SRC})
 if (WIN32)
   target_link_libraries(intrael ${LIBFREENECT_LIBRARIES} ${LIBJPEG_LIBRARIES} Ws2_32)
 else(WIN32)
-  target_link_libraries(intrael ${LIBFREENECT_LIBRARIES} ${LIBJPEG_LIBRARIES} m)
+  #target_link_libraries(intrael ${LIBFREENECT_LIBRARIES} ${LIBJPEG_LIBRARIES} m)
   #Uncomment the following and adjust the paths for a static build
-  #target_link_libraries(intrael /usr/local/lib/libfreenect.a usb-1.0 /opt/libjpeg-turbo/lib/libjpeg.a m)
+  target_link_libraries(intrael /usr/local/lib/libfreenect.a usb-1.0 /opt/libjpeg-turbo/lib/libjpeg.a m)
   endif()
 
 install (TARGETS intrael DESTINATION bin)

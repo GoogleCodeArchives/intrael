@@ -27,7 +27,7 @@ Sets the port the server should listen to. Default is 6661.
  Sets the JPEG quality. Range is 25-75. Default is 50.
 .TP 
 \fB-m \fIMASK\fR
- The first 3 bits of the provided integer MASK toggle Server Sent Events for data and MJPEG for grayscale(depth)JPEG and rgb JPEG outputs, respectively. SSE does not, as of this writing, support cross origin on any browser so the only way to test it is by using the option "-t" below. Range is 0-7. Default is 6 which means: poll for data(no SSE) and MJPEG streams for both cameras.
+ The first 3 bits of the provided integer MASK toggle Server Sent Events for data and MJPEG for grayscale(depth)JPEG and rgb JPEG outputs, respectively. SSE does not, as of this writing, support cross origin on any browser so the only way to test it is by using the option "--disable-web-security" when running chrome which disable cross origin checks. Range is 0-7. Default is 6 which means: poll for data(no SSE) and MJPEG streams for both cameras.
 .TP
 \fB-s \fISECRET\fR
  Sets a secret passphrase to be used for securing the live config functionality of the server.  A value of "0" enables the feature but without the need to authenticate. Live config changes are disabled by default.
@@ -44,9 +44,6 @@ Sets the port the server should listen to. Default is 6661.
 \fB-i \fIFILE\fR
  Reads the contents of the specified file to form a whitelist of IPs that can connect to the server from a comma separated list. Default is to allow all IPs.
 .TP
-\fB-t \fIFILE\fR
- Serves the contents of the specified file on special path /3 with html Content-type(See USAGE below). Default is not to serve any static contents.
-.TP
 \fB-n\fR
  No rgb video. Disables the rgb camera which gives a small performance boost.
 .TP
@@ -62,7 +59,7 @@ Sets the port the server should listen to. Default is 6661.
 
 .TP
 \fB-e \fIINT\fR
- Background extraction. This option controls the mode of operation for the background extraction. A value of 0 disables extraction, everything scanned withing the boundaries described by the following options will be taken into account. A positive value forces the server to create a reference frame(controlled by the -r option, see below) and report just the differences on subsequent frames. A negative value the server also utiilizes a background frame but scans with depth boundaries(-z,-Z options) relative to the background frame. Eg along with -z 30 -Z 120 the server will scan for blobs that are from 30 to 120 mm from the wall(or whatever was captured in the background frame). The absolute value of the option adds a safety margin that helps to clear noise that results from the instability of depth reporting from the kinect. Start low and raise until the result satisfies. The default value is 0, no extraction.
+ Background extraction. This option controls the mode of operation for the background extraction. A value of 0 disables extraction, everything scanned withing the boundaries described by the following options will be taken into account. A positive value forces the server to create a reference frame(controlled by the -r option, see below) and report just the differences on subsequent frames. A negative value the server also utiilizes a background frame but scans with depth boundaries(-z,-Z options) relative to the background frame. Eg along with -z 30 -Z 120 the server will scan for blobs that are from 30 to 120 mm from the wall(or whatever was captured in the background frame). In addition, the absolute value of the option acts as a safety margin that helps to clear noise that results from the instability of depth reporting from the kinect. Start low and raise until the result satisfies. The default value is 0, no extraction.
 .TP
 \fB-r \fIFRAMES\fR
  Set the number of frames to take into account while creating the background reference frame. Range is 1-999. Processing multiple frames leads to better quality of the reference frame and the extraction process(See above). While constructing the reference frame the kinect's led will blink orange-red. A value of 1 won't actually process a frame but just reset the depth maps and clear up the depth buffer used for generating the grayscale JPEG(see USAGE). Range is 1-9999. The default is 32, about one second worth of frames.
@@ -103,9 +100,6 @@ Sets the port the server should listen to. Default is 6661.
 \fB-i \fIDUMMY\fR
  When used in the context of live config(See below), it forces a reload of the IP list from/if the file was specified on startup with the -i option. DUMMY means that an argument has to be passed in the query string but is not taken into account.
 .TP
-\fB-t \fIDUMMY\fR
- When used in the context of live config(See below), it forces a reload of the contents for static file serving from the file that was specified on startup. DUMMY means that an argument has to be passed in the query string but is not taken into account.
-.TP
 \fB-a \fIANGLE\fR
  Moves the motor to the specified angle. After the motor moves to the specified position(Indicated by the last element of the HEADER, see below) you should reconstruct the reference frame(-r option) if using background extraction. Range is -31 to 31.
 
@@ -115,7 +109,7 @@ The server speaks the standard http protocol. Clients retrieve the data through 
 
 .TP
 \fB/0?\fIQUERY_STRING\fR
- This path allows live configuration changes to be performed to the server. All alowable command line options can be used here in the form of a query string eg. /0?z=1000&Z=2000 would force the engine to threshold from 1000 to 2000 millimetres. By default this functionality is disabled. You can enable it without authentication by specifying the option -s 0 on the command line. If -s is set to a string authentication is enabled which works as follows. The second element from the header in the JSON data output of the server(see HEADER FORMAT below) is a timestamp that must be concatenated with  the string provided to -s (<SECRET><TIMESTAMP>) and the result md5 hashed. The hash must then be passed along with the rest of the query arguments as an s=<HASH> for the commands to take effect. After every succesful request the hash timestamp will change requiring a repeat of the process for subsequent requests. The design does not take into account concurrent requests from multiple clients.
+ This path allows for capability testing and, optionally, live configuration changes to be performed to the server. This path returns a JSON array that denotes the capabilites of the server, with a format described in the next section. In addition, all alowable command line options can be used here in the form of a query string eg. /0?z=1000&Z=2000 would force the engine to threshold from 1000 to 2000 millimetres. By default this functionality is disabled. You can enable it without authentication by specifying the option -s 0 on the command line. If -s is set to a string authentication is enabled which works as follows. The second element from the header in the JSON data output of the server(see HEADER FORMAT below) is a timestamp that must be concatenated with  the string provided to -s (<SECRET><TIMESTAMP>) and the result md5 hashed. The hash must then be passed along with the rest of the query arguments as an s=<HASH> for the commands to take effect. After every succesful request the hash timestamp will change requiring a repeat of the process for subsequent requests. The design does not take into account concurrent requests from multiple clients.
 .TP
 \fB/1\fR
  This path provides 640x480 grayscale JPEGs created from the, thresholded, depth input. If multipart is enabled through the -m option(it is by default) you'll get an MJPEG stream else single snapshots per request. {WARNING} The grayscale stream is built as part of the blob tracking process. The implication of this is that you must concurently poll for the JSON data or else the JPEG stream will stall. The implication of this is that you should set the image src after you start polling for the JSON data.
@@ -123,12 +117,39 @@ The server speaks the standard http protocol. Clients retrieve the data through 
 \fB/2\fR
  This path provides 640x480 RGB JPEGs created from the video camera input. If multipart is enabled through the -m option(it is by default) you'll get an MJPEG stream else single snapshots per request. You'll have to manually shift parts of the depth JPEGs to match the rgb camera using the value provided as the last element of the data pack for each blob(See BLOB FORMAT below). The x and y shifting modifiers can be derived from this value like this: y=<VAL>/640 and x=<VAL>%640.  If the rgb functionality was disabled with the use of the -n command line option, the regular JSON response will be returned instead.
 .TP
-\fB/3\fR
- This path serves a static html file if it was specified on the command line with the -t option, otherwise it's the default JSON response.
-.TP
 \fBNOTICE\fR
- If several requests to the server have exactly the same paths, the browser will serialize the requests lowering the effective rate for each request. To avoid that you should request a unique path for every simultaneous request. Only the first character matters for selecting the type of data returned. So, a path of "/test3243434" will return the tracking data, a "/1dfdfdfdf" will return grayscale JPEGs and a "0ertdgf?z=..." will perform live changes.
+ If several poll requests to the server have exactly the same paths, the browser will serialize the requests lowering the effective rate for each request. To avoid that you should request a unique path for every simultaneous request. Only the first character matters for selecting the type of data returned. So, a path of "/test3243434" will return the tracking data, a "/1dfdfdfdf" will return grayscale JPEGs and a "0ertdgf?z=..." will perform live changes.
 
+
+
+.SH "CAPABILITIES FORMAT"
+ 
+Each of the 8 elements of the capabilities response(path /0) are described below by index:
+
+.TP
+\fB0\fP
+Value of the -m option. Use this to setup the method of data retrieval.
+.TP
+\fB1\fP
+Indicates the live config functionality staus.-1 means it's disabled, 0 means it's enabled with no need for authentication and 1 means it's enabled with authentication required.
+.TP
+\fB2\fP
+Flag(0/1) that indicates if RGB video was turned off with the -n option. 0 - Disabled, 1 - Enabled. 
+.TP
+\fB3\fP
+Flag(0/1) that indicates if big messages were enabled with the -n option. 0 - Normal, 1 - Big messages.
+.TP
+\fB4\fP
+Low x axis bound for the raster scan. See -x option.
+.TP
+\fB5\fP
+High x axis bound for the raster scan. See -X option.
+.TP
+\fB6\fP
+Low y axis bound for the raster scan. See -y option.
+.TP
+\fB7\fP
+High y axis bound for the raster scan. See -Y option.
 
 
 .SH "HEADER FORMAT"
@@ -250,28 +271,28 @@ Depth of the bottommost point of the object.
 Background depth at the bottommost point of the object.
 .TP
 \fB20\fP
-x coordinate of the point of the object nearest to the camera.
+x coordinate of the point of the object nearest to the camera or the background if -e is negative.
 .TP
 \fB21\fP
-y coordinate of the point of the object nearest to the camera.
+y coordinate of the point of the object nearest to the camera or the background if -e is negative.
 .TP
 \fB22\fP
-Depth of the point of the object nearest to the camera.
+Depth of the point of the object nearest to the camera or the background if -e is negative.
 .TP
 \fB23\fP
-Background depth at the point of the object nearest to the camera.
+Background depth at the point of the object nearest to the camera or the background if -e is negative.
 .TP
 \fB24\fP
-x coordinate of the point of the object furthest from the camera.
+x coordinate of the point of the object furthest from the camera or the background if -e is negative.
 .TP
 \fB25\fP
-y coordinate of the point of the object furthest from the camera.
+y coordinate of the point of the object furthest from the camera or the background if -e is negative.
 .TP
 \fB26\fP
-Depth of the point of the object furthest from the camera.
+Depth of the point of the object furthest from the camera or the background if -e is negative.
 .TP
 \fB27\fP
-Background depth at the point of the object furthest from the camera.
+Background depth at the point of the object furthest from the camera or the background if -e is negative.
 .TP
 \fB28\fP
 Pixel count of the object.

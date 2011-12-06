@@ -2,9 +2,7 @@
 
 	New features:
 		- Server Sent Events for the JSON output. Enable it through the -m option.
-		- Command line option (-t) that enables serving a single static html file.
-		  This is useful as SSE(See above) doesn't support CORS on any browser yet.
-	
+		
 	Fixes:
 		- An issue with some defines when building for arm NEON instruction set.
 		- The -e option would go as low as -1. Moved the lower bound to -1054.

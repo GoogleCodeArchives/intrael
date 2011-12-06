@@ -38,7 +38,7 @@ Sets the port the server should listen to. Default is 6661.
 <DT><B>-j </B><I>MODE</I><DD>
 <BR>&nbsp;Sets&nbsp;the&nbsp;JPEG&nbsp;quality.&nbsp;Range&nbsp;is&nbsp;25-75.&nbsp;Default&nbsp;is&nbsp;50.
 <DT><B>-m </B><I>MASK</I><DD>
-<BR>&nbsp;The&nbsp;first&nbsp;3&nbsp;bits&nbsp;of&nbsp;the&nbsp;provided&nbsp;integer&nbsp;MASK&nbsp;toggle&nbsp;Server&nbsp;Sent&nbsp;Events&nbsp;for&nbsp;data&nbsp;and&nbsp;MJPEG&nbsp;for&nbsp;grayscale(depth)JPEG&nbsp;and&nbsp;rgb&nbsp;JPEG&nbsp;outputs,&nbsp;respectively.&nbsp;SSE&nbsp;does&nbsp;not,&nbsp;as&nbsp;of&nbsp;this&nbsp;writing,&nbsp;support&nbsp;cross&nbsp;origin&nbsp;on&nbsp;any&nbsp;browser&nbsp;so&nbsp;the&nbsp;only&nbsp;way&nbsp;to&nbsp;test&nbsp;it&nbsp;is&nbsp;by&nbsp;using&nbsp;the&nbsp;option&nbsp;&quot;-t&quot;&nbsp;below.&nbsp;Range&nbsp;is&nbsp;0-7.&nbsp;Default&nbsp;is&nbsp;6&nbsp;which&nbsp;means:&nbsp;poll&nbsp;for&nbsp;data(no&nbsp;SSE)&nbsp;and&nbsp;MJPEG&nbsp;streams&nbsp;for&nbsp;both&nbsp;cameras.
+<BR>&nbsp;The&nbsp;first&nbsp;3&nbsp;bits&nbsp;of&nbsp;the&nbsp;provided&nbsp;integer&nbsp;MASK&nbsp;toggle&nbsp;Server&nbsp;Sent&nbsp;Events&nbsp;for&nbsp;data&nbsp;and&nbsp;MJPEG&nbsp;for&nbsp;grayscale(depth)JPEG&nbsp;and&nbsp;rgb&nbsp;JPEG&nbsp;outputs,&nbsp;respectively.&nbsp;SSE&nbsp;does&nbsp;not,&nbsp;as&nbsp;of&nbsp;this&nbsp;writing,&nbsp;support&nbsp;cross&nbsp;origin&nbsp;on&nbsp;any&nbsp;browser&nbsp;so&nbsp;the&nbsp;only&nbsp;way&nbsp;to&nbsp;test&nbsp;it&nbsp;is&nbsp;by&nbsp;using&nbsp;the&nbsp;option&nbsp;&quot;--disable-web-security&quot;&nbsp;when&nbsp;running&nbsp;chrome&nbsp;which&nbsp;disable&nbsp;cross&nbsp;origin&nbsp;checks.&nbsp;Range&nbsp;is&nbsp;0-7.&nbsp;Default&nbsp;is&nbsp;6&nbsp;which&nbsp;means:&nbsp;poll&nbsp;for&nbsp;data(no&nbsp;SSE)&nbsp;and&nbsp;MJPEG&nbsp;streams&nbsp;for&nbsp;both&nbsp;cameras.
 <DT><B>-s </B><I>SECRET</I><DD>
 <BR>&nbsp;Sets&nbsp;a&nbsp;secret&nbsp;passphrase&nbsp;to&nbsp;be&nbsp;used&nbsp;for&nbsp;securing&nbsp;the&nbsp;live&nbsp;config&nbsp;functionality&nbsp;of&nbsp;the&nbsp;server.&nbsp;&nbsp;A&nbsp;value&nbsp;of&nbsp;&quot;0&quot;&nbsp;enables&nbsp;the&nbsp;feature&nbsp;but&nbsp;without&nbsp;the&nbsp;need&nbsp;to&nbsp;authenticate.&nbsp;Live&nbsp;config&nbsp;changes&nbsp;are&nbsp;disabled&nbsp;by&nbsp;default.
 <DT><B>-f </B><I>FILE</I><DD>
@@ -49,8 +49,6 @@ Sets the port the server should listen to. Default is 6661.
 <BR>&nbsp;Reads&nbsp;the&nbsp;contents&nbsp;of&nbsp;the&nbsp;specified&nbsp;file&nbsp;to&nbsp;form&nbsp;a&nbsp;whitelist&nbsp;of&nbsp;origins&nbsp;that&nbsp;can&nbsp;issue&nbsp;requests&nbsp;to&nbsp;the&nbsp;server.&nbsp;Default&nbsp;is&nbsp;to&nbsp;allow&nbsp;all&nbsp;origins.
 <DT><B>-i </B><I>FILE</I><DD>
 <BR>&nbsp;Reads&nbsp;the&nbsp;contents&nbsp;of&nbsp;the&nbsp;specified&nbsp;file&nbsp;to&nbsp;form&nbsp;a&nbsp;whitelist&nbsp;of&nbsp;IPs&nbsp;that&nbsp;can&nbsp;connect&nbsp;to&nbsp;the&nbsp;server&nbsp;from&nbsp;a&nbsp;comma&nbsp;separated&nbsp;list.&nbsp;Default&nbsp;is&nbsp;to&nbsp;allow&nbsp;all&nbsp;IPs.
-<DT><B>-t </B><I>FILE</I><DD>
-<BR>&nbsp;Serves&nbsp;the&nbsp;contents&nbsp;of&nbsp;the&nbsp;specified&nbsp;file&nbsp;on&nbsp;special&nbsp;path&nbsp;/3&nbsp;with&nbsp;html&nbsp;Content-type(See&nbsp;USAGE&nbsp;below).&nbsp;Default&nbsp;is&nbsp;not&nbsp;to&nbsp;serve&nbsp;any&nbsp;static&nbsp;contents.
 <DT><B>-n</B><DD>
 <BR>&nbsp;No&nbsp;rgb&nbsp;video.&nbsp;Disables&nbsp;the&nbsp;rgb&nbsp;camera&nbsp;which&nbsp;gives&nbsp;a&nbsp;small&nbsp;performance&nbsp;boost.
 <DT><B>-b</B><DD>
@@ -62,7 +60,7 @@ Sets the port the server should listen to. Default is 6661.
 <P>
 <P>
 <DT><B>-e </B><I>INT</I><DD>
-<BR>&nbsp;Background&nbsp;extraction.&nbsp;This&nbsp;option&nbsp;controls&nbsp;the&nbsp;mode&nbsp;of&nbsp;operation&nbsp;for&nbsp;the&nbsp;background&nbsp;extraction.&nbsp;A&nbsp;value&nbsp;of&nbsp;0&nbsp;disables&nbsp;extraction,&nbsp;everything&nbsp;scanned&nbsp;withing&nbsp;the&nbsp;boundaries&nbsp;described&nbsp;by&nbsp;the&nbsp;following&nbsp;options&nbsp;will&nbsp;be&nbsp;taken&nbsp;into&nbsp;account.&nbsp;A&nbsp;positive&nbsp;value&nbsp;forces&nbsp;the&nbsp;server&nbsp;to&nbsp;create&nbsp;a&nbsp;reference&nbsp;frame(controlled&nbsp;by&nbsp;the&nbsp;-r&nbsp;option,&nbsp;see&nbsp;below)&nbsp;and&nbsp;report&nbsp;just&nbsp;the&nbsp;differences&nbsp;on&nbsp;subsequent&nbsp;frames.&nbsp;A&nbsp;negative&nbsp;value&nbsp;the&nbsp;server&nbsp;also&nbsp;utiilizes&nbsp;a&nbsp;background&nbsp;frame&nbsp;but&nbsp;scans&nbsp;with&nbsp;depth&nbsp;boundaries(-z,-Z&nbsp;options)&nbsp;relative&nbsp;to&nbsp;the&nbsp;background&nbsp;frame.&nbsp;Eg&nbsp;along&nbsp;with&nbsp;-z&nbsp;30&nbsp;-Z&nbsp;120&nbsp;the&nbsp;server&nbsp;will&nbsp;scan&nbsp;for&nbsp;blobs&nbsp;that&nbsp;are&nbsp;from&nbsp;30&nbsp;to&nbsp;120&nbsp;mm&nbsp;from&nbsp;the&nbsp;wall(or&nbsp;whatever&nbsp;was&nbsp;captured&nbsp;in&nbsp;the&nbsp;background&nbsp;frame).&nbsp;The&nbsp;absolute&nbsp;value&nbsp;of&nbsp;the&nbsp;option&nbsp;adds&nbsp;a&nbsp;safety&nbsp;margin&nbsp;that&nbsp;helps&nbsp;to&nbsp;clear&nbsp;noise&nbsp;that&nbsp;results&nbsp;from&nbsp;the&nbsp;instability&nbsp;of&nbsp;depth&nbsp;reporting&nbsp;from&nbsp;the&nbsp;kinect.&nbsp;Start&nbsp;low&nbsp;and&nbsp;raise&nbsp;until&nbsp;the&nbsp;result&nbsp;satisfies.&nbsp;The&nbsp;default&nbsp;value&nbsp;is&nbsp;0,&nbsp;no&nbsp;extraction.
+<BR>&nbsp;Background&nbsp;extraction.&nbsp;This&nbsp;option&nbsp;controls&nbsp;the&nbsp;mode&nbsp;of&nbsp;operation&nbsp;for&nbsp;the&nbsp;background&nbsp;extraction.&nbsp;A&nbsp;value&nbsp;of&nbsp;0&nbsp;disables&nbsp;extraction,&nbsp;everything&nbsp;scanned&nbsp;withing&nbsp;the&nbsp;boundaries&nbsp;described&nbsp;by&nbsp;the&nbsp;following&nbsp;options&nbsp;will&nbsp;be&nbsp;taken&nbsp;into&nbsp;account.&nbsp;A&nbsp;positive&nbsp;value&nbsp;forces&nbsp;the&nbsp;server&nbsp;to&nbsp;create&nbsp;a&nbsp;reference&nbsp;frame(controlled&nbsp;by&nbsp;the&nbsp;-r&nbsp;option,&nbsp;see&nbsp;below)&nbsp;and&nbsp;report&nbsp;just&nbsp;the&nbsp;differences&nbsp;on&nbsp;subsequent&nbsp;frames.&nbsp;A&nbsp;negative&nbsp;value&nbsp;the&nbsp;server&nbsp;also&nbsp;utiilizes&nbsp;a&nbsp;background&nbsp;frame&nbsp;but&nbsp;scans&nbsp;with&nbsp;depth&nbsp;boundaries(-z,-Z&nbsp;options)&nbsp;relative&nbsp;to&nbsp;the&nbsp;background&nbsp;frame.&nbsp;Eg&nbsp;along&nbsp;with&nbsp;-z&nbsp;30&nbsp;-Z&nbsp;120&nbsp;the&nbsp;server&nbsp;will&nbsp;scan&nbsp;for&nbsp;blobs&nbsp;that&nbsp;are&nbsp;from&nbsp;30&nbsp;to&nbsp;120&nbsp;mm&nbsp;from&nbsp;the&nbsp;wall(or&nbsp;whatever&nbsp;was&nbsp;captured&nbsp;in&nbsp;the&nbsp;background&nbsp;frame).&nbsp;In&nbsp;addition,&nbsp;the&nbsp;absolute&nbsp;value&nbsp;of&nbsp;the&nbsp;option&nbsp;acts&nbsp;as&nbsp;a&nbsp;safety&nbsp;margin&nbsp;that&nbsp;helps&nbsp;to&nbsp;clear&nbsp;noise&nbsp;that&nbsp;results&nbsp;from&nbsp;the&nbsp;instability&nbsp;of&nbsp;depth&nbsp;reporting&nbsp;from&nbsp;the&nbsp;kinect.&nbsp;Start&nbsp;low&nbsp;and&nbsp;raise&nbsp;until&nbsp;the&nbsp;result&nbsp;satisfies.&nbsp;The&nbsp;default&nbsp;value&nbsp;is&nbsp;0,&nbsp;no&nbsp;extraction.
 <DT><B>-r </B><I>FRAMES</I><DD>
 <BR>&nbsp;Set&nbsp;the&nbsp;number&nbsp;of&nbsp;frames&nbsp;to&nbsp;take&nbsp;into&nbsp;account&nbsp;while&nbsp;creating&nbsp;the&nbsp;background&nbsp;reference&nbsp;frame.&nbsp;Range&nbsp;is&nbsp;1-999.&nbsp;Processing&nbsp;multiple&nbsp;frames&nbsp;leads&nbsp;to&nbsp;better&nbsp;quality&nbsp;of&nbsp;the&nbsp;reference&nbsp;frame&nbsp;and&nbsp;the&nbsp;extraction&nbsp;process(See&nbsp;above).&nbsp;While&nbsp;constructing&nbsp;the&nbsp;reference&nbsp;frame&nbsp;the&nbsp;kinect's&nbsp;led&nbsp;will&nbsp;blink&nbsp;orange-red.&nbsp;A&nbsp;value&nbsp;of&nbsp;1&nbsp;won't&nbsp;actually&nbsp;process&nbsp;a&nbsp;frame&nbsp;but&nbsp;just&nbsp;reset&nbsp;the&nbsp;depth&nbsp;maps&nbsp;and&nbsp;clear&nbsp;up&nbsp;the&nbsp;depth&nbsp;buffer&nbsp;used&nbsp;for&nbsp;generating&nbsp;the&nbsp;grayscale&nbsp;JPEG(see&nbsp;USAGE).&nbsp;Range&nbsp;is&nbsp;1-9999.&nbsp;The&nbsp;default&nbsp;is&nbsp;32,&nbsp;about&nbsp;one&nbsp;second&nbsp;worth&nbsp;of&nbsp;frames.
 <DT><B>-x </B><I>PIXEL</I><DD>
@@ -89,8 +87,6 @@ Sets the port the server should listen to. Default is 6661.
 <BR>&nbsp;When&nbsp;used&nbsp;in&nbsp;the&nbsp;context&nbsp;of&nbsp;live&nbsp;config(See&nbsp;below),&nbsp;it&nbsp;forces&nbsp;a&nbsp;reload&nbsp;of&nbsp;the&nbsp;origin&nbsp;list&nbsp;from/if&nbsp;the&nbsp;file&nbsp;was&nbsp;specified&nbsp;on&nbsp;startup&nbsp;with&nbsp;the&nbsp;-o&nbsp;option.&nbsp;DUMMY&nbsp;means&nbsp;that&nbsp;an&nbsp;argument&nbsp;has&nbsp;to&nbsp;be&nbsp;passed&nbsp;in&nbsp;the&nbsp;query&nbsp;string&nbsp;but&nbsp;is&nbsp;not&nbsp;taken&nbsp;into&nbsp;account.
 <DT><B>-i </B><I>DUMMY</I><DD>
 <BR>&nbsp;When&nbsp;used&nbsp;in&nbsp;the&nbsp;context&nbsp;of&nbsp;live&nbsp;config(See&nbsp;below),&nbsp;it&nbsp;forces&nbsp;a&nbsp;reload&nbsp;of&nbsp;the&nbsp;IP&nbsp;list&nbsp;from/if&nbsp;the&nbsp;file&nbsp;was&nbsp;specified&nbsp;on&nbsp;startup&nbsp;with&nbsp;the&nbsp;-i&nbsp;option.&nbsp;DUMMY&nbsp;means&nbsp;that&nbsp;an&nbsp;argument&nbsp;has&nbsp;to&nbsp;be&nbsp;passed&nbsp;in&nbsp;the&nbsp;query&nbsp;string&nbsp;but&nbsp;is&nbsp;not&nbsp;taken&nbsp;into&nbsp;account.
-<DT><B>-t </B><I>DUMMY</I><DD>
-<BR>&nbsp;When&nbsp;used&nbsp;in&nbsp;the&nbsp;context&nbsp;of&nbsp;live&nbsp;config(See&nbsp;below),&nbsp;it&nbsp;forces&nbsp;a&nbsp;reload&nbsp;of&nbsp;the&nbsp;contents&nbsp;for&nbsp;static&nbsp;file&nbsp;serving&nbsp;from&nbsp;the&nbsp;file&nbsp;that&nbsp;was&nbsp;specified&nbsp;on&nbsp;startup.&nbsp;DUMMY&nbsp;means&nbsp;that&nbsp;an&nbsp;argument&nbsp;has&nbsp;to&nbsp;be&nbsp;passed&nbsp;in&nbsp;the&nbsp;query&nbsp;string&nbsp;but&nbsp;is&nbsp;not&nbsp;taken&nbsp;into&nbsp;account.
 <DT><B>-a </B><I>ANGLE</I><DD>
 <BR>&nbsp;Moves&nbsp;the&nbsp;motor&nbsp;to&nbsp;the&nbsp;specified&nbsp;angle.&nbsp;After&nbsp;the&nbsp;motor&nbsp;moves&nbsp;to&nbsp;the&nbsp;specified&nbsp;position(Indicated&nbsp;by&nbsp;the&nbsp;last&nbsp;element&nbsp;of&nbsp;the&nbsp;HEADER,&nbsp;see&nbsp;below)&nbsp;you&nbsp;should&nbsp;reconstruct&nbsp;the&nbsp;reference&nbsp;frame(-r&nbsp;option)&nbsp;if&nbsp;using&nbsp;background&nbsp;extraction.&nbsp;Range&nbsp;is&nbsp;-31&nbsp;to&nbsp;31.
 <P>
@@ -103,20 +99,44 @@ The server speaks the standard http protocol. Clients retrieve the data through 
 <P>
 <DL COMPACT>
 <DT><B>/0?</B><I>QUERY_STRING</I><DD>
-<BR>&nbsp;This&nbsp;path&nbsp;allows&nbsp;live&nbsp;configuration&nbsp;changes&nbsp;to&nbsp;be&nbsp;performed&nbsp;to&nbsp;the&nbsp;server.&nbsp;All&nbsp;alowable&nbsp;command&nbsp;line&nbsp;options&nbsp;can&nbsp;be&nbsp;used&nbsp;here&nbsp;in&nbsp;the&nbsp;form&nbsp;of&nbsp;a&nbsp;query&nbsp;string&nbsp;eg.&nbsp;/0?z=1000&amp;Z=2000&nbsp;would&nbsp;force&nbsp;the&nbsp;engine&nbsp;to&nbsp;threshold&nbsp;from&nbsp;1000&nbsp;to&nbsp;2000&nbsp;millimetres.&nbsp;By&nbsp;default&nbsp;this&nbsp;functionality&nbsp;is&nbsp;disabled.&nbsp;You&nbsp;can&nbsp;enable&nbsp;it&nbsp;without&nbsp;authentication&nbsp;by&nbsp;specifying&nbsp;the&nbsp;option&nbsp;-s&nbsp;0&nbsp;on&nbsp;the&nbsp;command&nbsp;line.&nbsp;If&nbsp;-s&nbsp;is&nbsp;set&nbsp;to&nbsp;a&nbsp;string&nbsp;authentication&nbsp;is&nbsp;enabled&nbsp;which&nbsp;works&nbsp;as&nbsp;follows.&nbsp;The&nbsp;second&nbsp;element&nbsp;from&nbsp;the&nbsp;header&nbsp;in&nbsp;the&nbsp;JSON&nbsp;data&nbsp;output&nbsp;of&nbsp;the&nbsp;server(see&nbsp;HEADER&nbsp;FORMAT&nbsp;below)&nbsp;is&nbsp;a&nbsp;timestamp&nbsp;that&nbsp;must&nbsp;be&nbsp;concatenated&nbsp;with&nbsp;&nbsp;the&nbsp;string&nbsp;provided&nbsp;to&nbsp;-s&nbsp;(&lt;SECRET&gt;&lt;TIMESTAMP&gt;)&nbsp;and&nbsp;the&nbsp;result&nbsp;md5&nbsp;hashed.&nbsp;The&nbsp;hash&nbsp;must&nbsp;then&nbsp;be&nbsp;passed&nbsp;along&nbsp;with&nbsp;the&nbsp;rest&nbsp;of&nbsp;the&nbsp;query&nbsp;arguments&nbsp;as&nbsp;an&nbsp;s=&lt;HASH&gt;&nbsp;for&nbsp;the&nbsp;commands&nbsp;to&nbsp;take&nbsp;effect.&nbsp;After&nbsp;every&nbsp;succesful&nbsp;request&nbsp;the&nbsp;hash&nbsp;timestamp&nbsp;will&nbsp;change&nbsp;requiring&nbsp;a&nbsp;repeat&nbsp;of&nbsp;the&nbsp;process&nbsp;for&nbsp;subsequent&nbsp;requests.&nbsp;The&nbsp;design&nbsp;does&nbsp;not&nbsp;take&nbsp;into&nbsp;account&nbsp;concurrent&nbsp;requests&nbsp;from&nbsp;multiple&nbsp;clients.
+<BR>&nbsp;This&nbsp;path&nbsp;allows&nbsp;for&nbsp;capability&nbsp;testing&nbsp;and,&nbsp;optionally,&nbsp;live&nbsp;configuration&nbsp;changes&nbsp;to&nbsp;be&nbsp;performed&nbsp;to&nbsp;the&nbsp;server.&nbsp;This&nbsp;path&nbsp;returns&nbsp;a&nbsp;JSON&nbsp;array&nbsp;that&nbsp;denotes&nbsp;the&nbsp;capabilites&nbsp;of&nbsp;the&nbsp;server,&nbsp;with&nbsp;a&nbsp;format&nbsp;described&nbsp;in&nbsp;the&nbsp;next&nbsp;section.&nbsp;In&nbsp;addition,&nbsp;all&nbsp;alowable&nbsp;command&nbsp;line&nbsp;options&nbsp;can&nbsp;be&nbsp;used&nbsp;here&nbsp;in&nbsp;the&nbsp;form&nbsp;of&nbsp;a&nbsp;query&nbsp;string&nbsp;eg.&nbsp;/0?z=1000&amp;Z=2000&nbsp;would&nbsp;force&nbsp;the&nbsp;engine&nbsp;to&nbsp;threshold&nbsp;from&nbsp;1000&nbsp;to&nbsp;2000&nbsp;millimetres.&nbsp;By&nbsp;default&nbsp;this&nbsp;functionality&nbsp;is&nbsp;disabled.&nbsp;You&nbsp;can&nbsp;enable&nbsp;it&nbsp;without&nbsp;authentication&nbsp;by&nbsp;specifying&nbsp;the&nbsp;option&nbsp;-s&nbsp;0&nbsp;on&nbsp;the&nbsp;command&nbsp;line.&nbsp;If&nbsp;-s&nbsp;is&nbsp;set&nbsp;to&nbsp;a&nbsp;string&nbsp;authentication&nbsp;is&nbsp;enabled&nbsp;which&nbsp;works&nbsp;as&nbsp;follows.&nbsp;The&nbsp;second&nbsp;element&nbsp;from&nbsp;the&nbsp;header&nbsp;in&nbsp;the&nbsp;JSON&nbsp;data&nbsp;output&nbsp;of&nbsp;the&nbsp;server(see&nbsp;HEADER&nbsp;FORMAT&nbsp;below)&nbsp;is&nbsp;a&nbsp;timestamp&nbsp;that&nbsp;must&nbsp;be&nbsp;concatenated&nbsp;with&nbsp;&nbsp;the&nbsp;string&nbsp;provided&nbsp;to&nbsp;-s&nbsp;(&lt;SECRET&gt;&lt;TIMESTAMP&gt;)&nbsp;and&nbsp;the&nbsp;result&nbsp;md5&nbsp;hashed.&nbsp;The&nbsp;hash&nbsp;must&nbsp;then&nbsp;be&nbsp;passed&nbsp;along&nbsp;with&nbsp;the&nbsp;rest&nbsp;of&nbsp;the&nbsp;query&nbsp;arguments&nbsp;as&nbsp;an&nbsp;s=&lt;HASH&gt;&nbsp;for&nbsp;the&nbsp;commands&nbsp;to&nbsp;take&nbsp;effect.&nbsp;After&nbsp;every&nbsp;succesful&nbsp;request&nbsp;the&nbsp;hash&nbsp;timestamp&nbsp;will&nbsp;change&nbsp;requiring&nbsp;a&nbsp;repeat&nbsp;of&nbsp;the&nbsp;process&nbsp;for&nbsp;subsequent&nbsp;requests.&nbsp;The&nbsp;design&nbsp;does&nbsp;not&nbsp;take&nbsp;into&nbsp;account&nbsp;concurrent&nbsp;requests&nbsp;from&nbsp;multiple&nbsp;clients.
 <DT><B>/1</B><DD>
 <BR>&nbsp;This&nbsp;path&nbsp;provides&nbsp;640x480&nbsp;grayscale&nbsp;JPEGs&nbsp;created&nbsp;from&nbsp;the,&nbsp;thresholded,&nbsp;depth&nbsp;input.&nbsp;If&nbsp;multipart&nbsp;is&nbsp;enabled&nbsp;through&nbsp;the&nbsp;-m&nbsp;option(it&nbsp;is&nbsp;by&nbsp;default)&nbsp;you'll&nbsp;get&nbsp;an&nbsp;MJPEG&nbsp;stream&nbsp;else&nbsp;single&nbsp;snapshots&nbsp;per&nbsp;request.&nbsp;{WARNING}&nbsp;The&nbsp;grayscale&nbsp;stream&nbsp;is&nbsp;built&nbsp;as&nbsp;part&nbsp;of&nbsp;the&nbsp;blob&nbsp;tracking&nbsp;process.&nbsp;The&nbsp;implication&nbsp;of&nbsp;this&nbsp;is&nbsp;that&nbsp;you&nbsp;must&nbsp;concurently&nbsp;poll&nbsp;for&nbsp;the&nbsp;JSON&nbsp;data&nbsp;or&nbsp;else&nbsp;the&nbsp;JPEG&nbsp;stream&nbsp;will&nbsp;stall.&nbsp;The&nbsp;implication&nbsp;of&nbsp;this&nbsp;is&nbsp;that&nbsp;you&nbsp;should&nbsp;set&nbsp;the&nbsp;image&nbsp;src&nbsp;after&nbsp;you&nbsp;start&nbsp;polling&nbsp;for&nbsp;the&nbsp;JSON&nbsp;data.
 <DT><B>/2</B><DD>
 <BR>&nbsp;This&nbsp;path&nbsp;provides&nbsp;640x480&nbsp;RGB&nbsp;JPEGs&nbsp;created&nbsp;from&nbsp;the&nbsp;video&nbsp;camera&nbsp;input.&nbsp;If&nbsp;multipart&nbsp;is&nbsp;enabled&nbsp;through&nbsp;the&nbsp;-m&nbsp;option(it&nbsp;is&nbsp;by&nbsp;default)&nbsp;you'll&nbsp;get&nbsp;an&nbsp;MJPEG&nbsp;stream&nbsp;else&nbsp;single&nbsp;snapshots&nbsp;per&nbsp;request.&nbsp;You'll&nbsp;have&nbsp;to&nbsp;manually&nbsp;shift&nbsp;parts&nbsp;of&nbsp;the&nbsp;depth&nbsp;JPEGs&nbsp;to&nbsp;match&nbsp;the&nbsp;rgb&nbsp;camera&nbsp;using&nbsp;the&nbsp;value&nbsp;provided&nbsp;as&nbsp;the&nbsp;last&nbsp;element&nbsp;of&nbsp;the&nbsp;data&nbsp;pack&nbsp;for&nbsp;each&nbsp;blob(See&nbsp;BLOB&nbsp;FORMAT&nbsp;below).&nbsp;The&nbsp;x&nbsp;and&nbsp;y&nbsp;shifting&nbsp;modifiers&nbsp;can&nbsp;be&nbsp;derived&nbsp;from&nbsp;this&nbsp;value&nbsp;like&nbsp;this:&nbsp;y=&lt;VAL&gt;/640&nbsp;and&nbsp;x=&lt;VAL&gt;%640.&nbsp;&nbsp;If&nbsp;the&nbsp;rgb&nbsp;functionality&nbsp;was&nbsp;disabled&nbsp;with&nbsp;the&nbsp;use&nbsp;of&nbsp;the&nbsp;-n&nbsp;command&nbsp;line&nbsp;option,&nbsp;the&nbsp;regular&nbsp;JSON&nbsp;response&nbsp;will&nbsp;be&nbsp;returned&nbsp;instead.
-<DT><B>/3</B><DD>
-<BR>&nbsp;This&nbsp;path&nbsp;serves&nbsp;a&nbsp;static&nbsp;html&nbsp;file&nbsp;if&nbsp;it&nbsp;was&nbsp;specified&nbsp;on&nbsp;the&nbsp;command&nbsp;line&nbsp;with&nbsp;the&nbsp;-t&nbsp;option,&nbsp;otherwise&nbsp;it's&nbsp;the&nbsp;default&nbsp;JSON&nbsp;response.
 <DT><B>NOTICE</B><DD>
-<BR>&nbsp;If&nbsp;several&nbsp;requests&nbsp;to&nbsp;the&nbsp;server&nbsp;have&nbsp;exactly&nbsp;the&nbsp;same&nbsp;paths,&nbsp;the&nbsp;browser&nbsp;will&nbsp;serialize&nbsp;the&nbsp;requests&nbsp;lowering&nbsp;the&nbsp;effective&nbsp;rate&nbsp;for&nbsp;each&nbsp;request.&nbsp;To&nbsp;avoid&nbsp;that&nbsp;you&nbsp;should&nbsp;request&nbsp;a&nbsp;unique&nbsp;path&nbsp;for&nbsp;every&nbsp;simultaneous&nbsp;request.&nbsp;Only&nbsp;the&nbsp;first&nbsp;character&nbsp;matters&nbsp;for&nbsp;selecting&nbsp;the&nbsp;type&nbsp;of&nbsp;data&nbsp;returned.&nbsp;So,&nbsp;a&nbsp;path&nbsp;of&nbsp;&quot;/test3243434&quot;&nbsp;will&nbsp;return&nbsp;the&nbsp;tracking&nbsp;data,&nbsp;a&nbsp;&quot;/1dfdfdfdf&quot;&nbsp;will&nbsp;return&nbsp;grayscale&nbsp;JPEGs&nbsp;and&nbsp;a&nbsp;&quot;0ertdgf?z=...&quot;&nbsp;will&nbsp;perform&nbsp;live&nbsp;changes.
+<BR>&nbsp;If&nbsp;several&nbsp;poll&nbsp;requests&nbsp;to&nbsp;the&nbsp;server&nbsp;have&nbsp;exactly&nbsp;the&nbsp;same&nbsp;paths,&nbsp;the&nbsp;browser&nbsp;will&nbsp;serialize&nbsp;the&nbsp;requests&nbsp;lowering&nbsp;the&nbsp;effective&nbsp;rate&nbsp;for&nbsp;each&nbsp;request.&nbsp;To&nbsp;avoid&nbsp;that&nbsp;you&nbsp;should&nbsp;request&nbsp;a&nbsp;unique&nbsp;path&nbsp;for&nbsp;every&nbsp;simultaneous&nbsp;request.&nbsp;Only&nbsp;the&nbsp;first&nbsp;character&nbsp;matters&nbsp;for&nbsp;selecting&nbsp;the&nbsp;type&nbsp;of&nbsp;data&nbsp;returned.&nbsp;So,&nbsp;a&nbsp;path&nbsp;of&nbsp;&quot;/test3243434&quot;&nbsp;will&nbsp;return&nbsp;the&nbsp;tracking&nbsp;data,&nbsp;a&nbsp;&quot;/1dfdfdfdf&quot;&nbsp;will&nbsp;return&nbsp;grayscale&nbsp;JPEGs&nbsp;and&nbsp;a&nbsp;&quot;0ertdgf?z=...&quot;&nbsp;will&nbsp;perform&nbsp;live&nbsp;changes.
 <P>
 <P>
 <P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
+<H2>CAPABILITIES FORMAT</H2>
+
+<BR>&nbsp;
+Each of the 8 elements of the capabilities response(path /0) are described below by index:
+<P>
+<DL COMPACT>
+<DT><B>0</B><DD>
+Value of the -m option. Use this to setup the method of data retrieval.
+<DT><B>1</B><DD>
+Indicates the live config functionality staus.-1 means it's disabled, 0 means it's enabled with no need for authentication and 1 means it's enabled with authentication required.
+<DT><B>2</B><DD>
+Flag(0/1) that indicates if RGB video was turned off with the -n option. 0 - Disabled, 1 - Enabled. 
+<DT><B>3</B><DD>
+Flag(0/1) that indicates if big messages were enabled with the -n option. 0 - Normal, 1 - Big messages.
+<DT><B>4</B><DD>
+Low x axis bound for the raster scan. See -x option.
+<DT><B>5</B><DD>
+High x axis bound for the raster scan. See -X option.
+<DT><B>6</B><DD>
+Low y axis bound for the raster scan. See -y option.
+<DT><B>7</B><DD>
+High y axis bound for the raster scan. See -Y option.
+<P>
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
 <H2>HEADER FORMAT</H2>
 
 <BR>&nbsp;
@@ -157,7 +177,7 @@ Motor angle as reported by the kinect.
 Motor state. 0-Not moving, 4-Moving.
 <P>
 </DL>
-<A NAME="lbAG">&nbsp;</A>
+<A NAME="lbAH">&nbsp;</A>
 <H2>BLOB FORMAT</H2>
 
 <P>
@@ -205,21 +225,21 @@ Depth of the bottommost point of the object.
 <DT><B>19</B><DD>
 Background depth at the bottommost point of the object.
 <DT><B>20</B><DD>
-x coordinate of the point of the object nearest to the camera.
+x coordinate of the point of the object nearest to the camera or the background if -e is negative.
 <DT><B>21</B><DD>
-y coordinate of the point of the object nearest to the camera.
+y coordinate of the point of the object nearest to the camera or the background if -e is negative.
 <DT><B>22</B><DD>
-Depth of the point of the object nearest to the camera.
+Depth of the point of the object nearest to the camera or the background if -e is negative.
 <DT><B>23</B><DD>
-Background depth at the point of the object nearest to the camera.
+Background depth at the point of the object nearest to the camera or the background if -e is negative.
 <DT><B>24</B><DD>
-x coordinate of the point of the object furthest from the camera.
+x coordinate of the point of the object furthest from the camera or the background if -e is negative.
 <DT><B>25</B><DD>
-y coordinate of the point of the object furthest from the camera.
+y coordinate of the point of the object furthest from the camera or the background if -e is negative.
 <DT><B>26</B><DD>
-Depth of the point of the object furthest from the camera.
+Depth of the point of the object furthest from the camera or the background if -e is negative.
 <DT><B>27</B><DD>
-Background depth at the point of the object furthest from the camera.
+Background depth at the point of the object furthest from the camera or the background if -e is negative.
 <DT><B>28</B><DD>
 Pixel count of the object.
 <DT><B>29</B><DD>
@@ -231,26 +251,26 @@ Shifting modifier for the rgb mask (See the description for path /2 on USAGE).
 <P>
 <P>
 </DL>
-<A NAME="lbAH">&nbsp;</A>
+<A NAME="lbAI">&nbsp;</A>
 <H2>EXAMPLES</H2>
 
 <P>
 Check <A HREF="http://www.intrael.com">http://www.intrael.com</A>
 <P>
-<A NAME="lbAI">&nbsp;</A>
+<A NAME="lbAJ">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
 <P>
 Check <A HREF="http://www.openkinect.org">http://www.openkinect.org</A>
 <P>
 <P>
-<A NAME="lbAJ">&nbsp;</A>
+<A NAME="lbAK">&nbsp;</A>
 <H2>AUTHOR</H2>
 
 <P>
 Yannis Gravezas (<A HREF="mailto:wizgrav@gmail.com">wizgrav@gmail.com</A>)
 <P>
-<A NAME="lbAK">&nbsp;</A>
+<A NAME="lbAL">&nbsp;</A>
 <H2>LICENSE</H2>
 
 <P>
@@ -276,17 +296,18 @@ along with this program.  If not, see &lt;<A HREF="http://www.gnu.org/licenses/g
 <DT><A HREF="#lbAC">DESCRIPTION</A><DD>
 <DT><A HREF="#lbAD">OPTIONS</A><DD>
 <DT><A HREF="#lbAE">USAGE</A><DD>
-<DT><A HREF="#lbAF">HEADER FORMAT</A><DD>
-<DT><A HREF="#lbAG">BLOB FORMAT</A><DD>
-<DT><A HREF="#lbAH">EXAMPLES</A><DD>
-<DT><A HREF="#lbAI">SEE ALSO</A><DD>
-<DT><A HREF="#lbAJ">AUTHOR</A><DD>
-<DT><A HREF="#lbAK">LICENSE</A><DD>
+<DT><A HREF="#lbAF">CAPABILITIES FORMAT</A><DD>
+<DT><A HREF="#lbAG">HEADER FORMAT</A><DD>
+<DT><A HREF="#lbAH">BLOB FORMAT</A><DD>
+<DT><A HREF="#lbAI">EXAMPLES</A><DD>
+<DT><A HREF="#lbAJ">SEE ALSO</A><DD>
+<DT><A HREF="#lbAK">AUTHOR</A><DD>
+<DT><A HREF="#lbAL">LICENSE</A><DD>
 </DL>
 <HR>
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 21:23:22 GMT, November 24, 2011
+Time: 00:03:39 GMT, December 06, 2011
 </BODY>
 </HTML>
