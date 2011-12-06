@@ -50,7 +50,19 @@ else (LIBFREENECT_LIBRARIES AND LIBFREENECT_INCLUDE_DIRS)
 	PATH_SUFFIXES
 	  libfreenect
   )
-
+  
+  find_path(LIBFREENECT_REG_INCLUDE_DIR
+    NAMES
+	libfreenect-registration.h
+    PATHS
+      /usr/include/libfreenect
+      /usr/local/include/libfreenect
+      /opt/local/include/libfreenect
+      /sw/include/libfreenect
+	PATH_SUFFIXES
+	  libfreenect
+  )
+  
   find_library(LIBFREENECT_LIBRARY
     NAMES
       freenect
@@ -64,12 +76,15 @@ else (LIBFREENECT_LIBRARIES AND LIBFREENECT_INCLUDE_DIRS)
   set(LIBFREENECT_INCLUDE_DIRS
     ${LIBFREENECT_INCLUDE_DIR}
   )
+   set(LIBFREENECT_REG_INCLUDE_DIRS
+    ${LIBFREENECT_REG_INCLUDE_DIR}
+  )
   set(LIBFREENECT_LIBRARIES
     ${LIBFREENECT_LIBRARY}
 )
-  if (LIBFREENECT_INCLUDE_DIRS AND LIBFREENECT_LIBRARIES)
+  if (LIBFREENECT_INCLUDE_DIRS AND LIBFREENECT_LIBRARIES AND LIBFREENECT_REG_INCLUDE_DIRS)
      set(LIBFREENECT_FOUND TRUE)
-  endif (LIBFREENECT_INCLUDE_DIRS AND LIBFREENECT_LIBRARIES)
+  endif (LIBFREENECT_INCLUDE_DIRS AND LIBFREENECT_LIBRARIES AND LIBFREENECT_REG_INCLUDE_DIRS)
 
   if (LIBFREENECT_FOUND)
     if (NOT libfreenect_FIND_QUIETLY)
@@ -79,6 +94,10 @@ else (LIBFREENECT_LIBRARIES AND LIBFREENECT_INCLUDE_DIRS)
     
     endif (NOT libfreenect_FIND_QUIETLY)
   else (LIBFREENECT_FOUND)
+    if (LIBFREENECT_INCLUDE_DIRS AND NOT LIBFREENECT_REG_INCLUDE_DIRS)
+      message(FATAL_ERROR "You should grab the unstable branch of libfreenect from https://github.com/OpenKinect/libfreenect")
+    endif (LIBFREENECT_INCLUDE_DIRS AND NOT LIBFREENECT_REG_INCLUDE_DIRS)
+  
     if (libfreenect_FIND_REQUIRED)
       message(FATAL_ERROR "Could not find libfreenect")
     endif (libfreenect_FIND_REQUIRED)
