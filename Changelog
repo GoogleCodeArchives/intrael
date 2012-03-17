@@ -1,7 +1,24 @@
+=== 2.0 RC1 ===
+
+	New features:
+		- Shifting tables for Depth->RGB provided through /4x uri
+		- Raw frames(600k each) provided as binary files via /3x
+		- Max number of connections per IP supported through -m
+		- Can limit a single IP and/or origin for config requests
+		- A convenience lib is provided. Feel free to enhance it.
+
+	Fixes:
+		- New multithreaded arch allowing full and multi cpu utilization
+		- Optimised algorithm with nice speedup especially for non-SIMD
+		- Can request polling or streaming directly. No need to restart.
+		- The depth jpeg generation was polished and optimised as well.
+		
+
 === 1.1 ===
 
 	New features:
 		- Server Sent Events for the JSON output. Enable it through the -m option.
+		- Capabilities testing. Path /0 now returns an array with the capabilities.
 		
 	Fixes:
 		- An issue with some defines when building for arm NEON instruction set.

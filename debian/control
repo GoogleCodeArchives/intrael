@@ -1,0 +1,13 @@
+Source: intrael
+Section: web
+Priority: optional
+DM-Upload-Allowed: yes
+Maintainer: Yannis Gravezas <wizgrav@gmail.com>
+Build-Depends: debhelper, cdbs, cmake, libfreenect-dev, libjpeg-turbo-dev
+Standards-Version: 3.9.2
+Homepage: http://www.openkinect.org/
+
+Package: intrael
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libusb-1.0-0 
+Description:  Intrael server - Kinect HTTP interface - binary

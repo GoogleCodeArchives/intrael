@@ -6,17 +6,18 @@
 #Copyright (C) 2011 Yannis Gravezas. You can contact the author at wizgrav@gmail.com.
 
 #This program is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
+#it under the terms of the Affero GNU General Public License as published
+#by the Free Software Foundation, either version 3 of the License, or
 #(at your option) any later version.
 
 #This program is distributed in the hope that it will be useful,
 #but WITHOUT ANY WARRANTY; without even the implied warranty of
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License v3 for more details.
+#Affero GNU General Public License v3 for more details.
 
-#You should have received a copy of the GNU General Public License v3
+#You should have received a copy of the Affero GNU General Public License v3
 #along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
+
 
 ######################################################################################
 # CMake directives
@@ -32,15 +33,15 @@ cmake_minimum_required(VERSION 2.6)
 
 PROJECT(Intrael)
 
-set (PROJECT_VER_MAJOR 1)
+set (PROJECT_VER_MAJOR 2)
 set (PROJECT_VER_MINOR 0)
 set (PROJECT_VER_PATCH 0)
 set (PROJECT_VER 
   "${PROJECT_VER_MAJOR}.${PROJECT_VER_MINOR}.${PROJECT_VER_PATCH}")
 
-OPTION(COMPILE_SSE2 "Use Intel SSE2 instruction set" ON)
+OPTION(COMPILE_SSE "Use x86 SSE instruction set" OFF)
+OPTION(COMPILE_SSE2 "Use x86 SSE2 instruction set" OFF)
 OPTION(COMPILE_NEON "Use Arm NEON instruction set" OFF)
-OPTION(COMPILE_MORE_NEON "Use more NEON, possibly degrading performance" OFF)
 
 ######################################################################################
 # CMake Modules
@@ -65,9 +66,17 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 SET(DOC_OUTPUT_PATH ${CMAKE_BINARY_DIR}/doc)
 
 if(CMAKE_C_FLAGS STREQUAL "")
-  set(CMAKE_C_FLAGS "-O3")
+  set(CMAKE_C_FLAGS "-O3 -g")
 endif()
+if(APPLE)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -arch i386 -arch x86_64 -Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation")
+endif(APPLE)
 add_definitions(-Wall)
+
+IF ( COMPILE_SSE )
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -msse")
+        add_definitions(-DUSE_SSE)
+ENDIF ( COMPILE_SSE )
 
 IF ( COMPILE_SSE2 )
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -msse2")
@@ -79,10 +88,7 @@ IF ( COMPILE_NEON )
 	add_definitions(-DUSE_NEON)
 ENDIF ( COMPILE_NEON )
 
-IF ( COMPILE_MORE_NEON )
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -mfpu=neon")
-	add_definitions(-DUSE_MORE_NEON)
-ENDIF ( COMPILE_MORE_NEON )
+
 
 add_subdirectory (src)
 

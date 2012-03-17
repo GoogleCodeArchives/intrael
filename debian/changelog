@@ -1,0 +1,5 @@
+intrael (2.0-0ubuntu1) oneiric; urgency=medium
+
+  * Package built with CMake
+
+ -- Yannis Gravezas <wizgrav@gmail.com>  Wed, 7 Mar 2012 13:28:33 +0200
