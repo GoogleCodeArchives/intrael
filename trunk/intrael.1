@@ -1,4 +1,4 @@
-.TH INTRAEL 1 "November 21, 2011" "" "Intrael application server"
+.TH INTRAEL 1 "March 18, 2012" "" "Intrael application server"
 
 .SH NAME
 intrael \- Computer vision for the web
@@ -10,7 +10,7 @@ intrael \- Computer vision for the web
 .br
 
 .SH DESCRIPTION
-The \fBintrael\fP server processes the depth stream from the Kinect, identifies objects and measures several of their properties. The collected data for each frame are then made available to network clients through HTTP wrapped in JSON arrays. Its main purpose is to enable web developers to develop computer vision apps using javascript & HTML. The protocol used is standard HTTP though so other languages can take advantage of it as well. It also provides the raw camera frames as JPEG snapshots or MJPEG streams. 
+The \fBintrael\fP server processes the depth stream from the Kinect, thresholds it and measures distinct blobs found in it. The derived data for each frame are then made available to network clients through HTTP wrapped in JSON arrays. These allow web developers to develop computer vision apps using javascript & HTML. The protocol used is standard HTTP so other languages can use it as well. The raw camera frames are provided as single JPEGs, MJPEG streams and binary files all tranferable over HTTP. 
 
 .SH OPTIONS
 .TP 
@@ -20,35 +20,44 @@ Sets the port the server should listen to. Default is 6661.
 \fB-l \fIADDRESS\fR
  Sets the address the server should listen to. Default is INADDR_ANY.
 .TP 
-\fB-d \fIDEVICE\fR
+\fB-k \fIDEVICE\fR
  Sets the kinect device to use. You can either supply an index id(0-9) or the serial of a specific kinect. The special value "list" prints the serials of all kinected kinects. Default is 0, first device by index.
 .TP 
-\fB-j \fIMODE\fR
- Sets the JPEG quality. Range is 25-75. Default is 50.
+\fB-u \fIFRAMES\fR
+ The queue length of binary frames(600k each) to keep allocated to keep in memory the clients at any time. If more are needed because of slow or malicious clients, the processing will wait. Default is 3.
 .TP 
-\fB-m \fIMASK\fR
- The first 3 bits of the provided integer MASK toggle Server Sent Events for data and MJPEG for grayscale(depth)JPEG and rgb JPEG outputs, respectively. SSE does not, as of this writing, support cross origin on any browser so the only way to test it is by using the option "--disable-web-security" when running chrome which disable cross origin checks. Range is 0-7. Default is 6 which means: poll for data(no SSE) and MJPEG streams for both cameras.
-.TP
+\fB-f \fIFRAMES\fR
+ The queue length of json and JPEG frames(64k each) to keep on memory to feed the clients at any time. If more are needed because of slow or malicious clients, the processing will wait. Default is 30.
+.TP 
+\fB-j \fIQUALITY\fR
+ Sets the JPEG quality. Range is 25-75. Default is 75.
+.TP 
 \fB-s \fISECRET\fR
- Sets a secret passphrase to be used for securing the live config functionality of the server.  A value of "0" enables the feature but without the need to authenticate. Live config changes are disabled by default.
+ Sets a secret passphrase to be used for securing the live config functionality of the server. If a value of '0' is provided the server won't accept config requests. Default it to allow them without authentication.  
 .TP
-\fB-f \fIFILE\fR
- Sets the file to load  the background reference frame from. The format is standard pgm(the extension is NOT added automatically).
+\fB-b \fIFILE\fR
+ Sets the filename to load as the background reference frame.
 .TP
-\fB-F \fIFILE\fR
- Sets the file to dump the background reference file to.
+\fB-d \fIFILE\fR
+ Sets the filename to dump the background reference file to.
 .TP
 \fB-o \fIFILE\fR
- Reads the contents of the specified file to form a whitelist of origins that can issue requests to the server. Default is to allow all origins.
+ Read a whitelist of origins allowed to connect to the server from the specified file. Default is to allow all origins.
+.TP
+\fB-O \fIORIGIN\fR
+ Only this origin will be allowed to issue config requests.
 .TP
 \fB-i \fIFILE\fR
- Reads the contents of the specified file to form a whitelist of IPs that can connect to the server from a comma separated list. Default is to allow all IPs.
+ Read a whitelist of IPs allowed to connect to the server from the specified file. Default is to allow all IPs.
+.TP
+\fB-I \fIADDRESS\fR
+ Only this IP address will be allowed to issue config requests.
+.TP
+\fB-m \fICONNS\fR
+ Max number of connections per IP address that will be allowed to connect to the server.
 .TP
 \fB-n\fR
- No rgb video. Disables the rgb camera which gives a small performance boost.
-.TP
-\fB-b\fR
- Big messages. By default the max size for the JSON messages of the server is 4KB which can fit ~25 concurrent blobs per message. This option raises the limit to 16KB allowing ~100 blobs.
+ No rgb video. Disables the rgb camera and gives a small performance boost overall.
 .TP 
 \fB-v\fP
  Prints the version of the program.
@@ -62,7 +71,7 @@ Sets the port the server should listen to. Default is 6661.
  Background extraction. This option controls the mode of operation for the background extraction. A value of 0 disables extraction, everything scanned withing the boundaries described by the following options will be taken into account. A positive value forces the server to create a reference frame(controlled by the -r option, see below) and report just the differences on subsequent frames. A negative value the server also utiilizes a background frame but scans with depth boundaries(-z,-Z options) relative to the background frame. Eg along with -z 30 -Z 120 the server will scan for blobs that are from 30 to 120 mm from the wall(or whatever was captured in the background frame). In addition, the absolute value of the option acts as a safety margin that helps to clear noise that results from the instability of depth reporting from the kinect. Start low and raise until the result satisfies. The default value is 0, no extraction.
 .TP
 \fB-r \fIFRAMES\fR
- Set the number of frames to take into account while creating the background reference frame. Range is 1-999. Processing multiple frames leads to better quality of the reference frame and the extraction process(See above). While constructing the reference frame the kinect's led will blink orange-red. A value of 1 won't actually process a frame but just reset the depth maps and clear up the depth buffer used for generating the grayscale JPEG(see USAGE). Range is 1-9999. The default is 32, about one second worth of frames.
+ Set the number of frames to take into account while creating the background reference frame. Range is 1-999. Processing multiple frames leads to better quality of the reference frame and the extraction process(See above). While constructing the reference frame the kinect's led will blink orange-red. Range is 1-9999. The default is 30, about one second worth of frames.
 .TP
 \fB-x \fIPIXEL\fR
  Set the lower bound for the X axis scan. Range is 0-632. Will be rounded to a multiple of 8. Default is 0.
@@ -88,10 +97,10 @@ Sets the port the server should listen to. Default is 6661.
 \fB-C \fIPIXELS\fR
  Set the maximum pixel count for an object to be reported. Default is 0, check disabled.
 .TP
-\fB-f \fIDUMMY\fR
+\fB-b \fIDUMMY\fR
  When used in the context of live config(See below), it forces a reload of the reference frame from/if the file was specified on startup. DUMMY means that an argument has to be passed in the query string but is not taken into account.
 .TP
-\fB-F \fIDUMMY\fR
+\fB-d \fIDUMMY\fR
  When used in the context of live config(See below), it forces a dump of the reference frame to/if the file was specified on startup with the -F option. DUMMY means that an argument has to be passed in the query string but is not taken into account.
 .TP
 \fB-o \fIDUMMY\fR
@@ -102,209 +111,205 @@ Sets the port the server should listen to. Default is 6661.
 .TP
 \fB-a \fIANGLE\fR
  Moves the motor to the specified angle. After the motor moves to the specified position(Indicated by the last element of the HEADER, see below) you should reconstruct the reference frame(-r option) if using background extraction. Range is -31 to 31.
+.TP
+\fB-g \fIBOOLEAN\fR
+ Toggles accelerometer readings. 0 disables, 1 enables. Default is enabled
 
 .SH USAGE
 
-The server speaks the standard http protocol. Clients retrieve the data through xmlhttprequests or the <img> tag. Requests for any path that starts with anything else than /1 and /2(And even that if you have explicitly disabled RGB with the -n option) return the tracking data for the current frame in the form of a JSON array that's composed of an 16 element header followed by several 32 element packs, one for every detected blob. The formats for these are detailed in the next sections. The following paths are special:
-
 .TP
-\fB/0?\fIQUERY_STRING\fR
- This path allows for capability testing and, optionally, live configuration changes to be performed to the server. This path returns a JSON array that denotes the capabilites of the server, with a format described in the next section. In addition, all alowable command line options can be used here in the form of a query string eg. /0?z=1000&Z=2000 would force the engine to threshold from 1000 to 2000 millimetres. By default this functionality is disabled. You can enable it without authentication by specifying the option -s 0 on the command line. If -s is set to a string authentication is enabled which works as follows. The second element from the header in the JSON data output of the server(see HEADER FORMAT below) is a timestamp that must be concatenated with  the string provided to -s (<SECRET><TIMESTAMP>) and the result md5 hashed. The hash must then be passed along with the rest of the query arguments as an s=<HASH> for the commands to take effect. After every succesful request the hash timestamp will change requiring a repeat of the process for subsequent requests. The design does not take into account concurrent requests from multiple clients.
+The server communicates using the http protocol. Clients retrieve the data through xmlhttprequests or the <img> tag wich we use to retrieve to JPEG shots or MJPEG streams. A request to http://<server_ip:server_port>/1x returns depth image responses. The second digit controls the rate of the response. A /10 would fetch a single JPEG while /11 activates true MJPEG streaming with a rate of 1:1 with the rate coming in from the kinect. /12 would fetch every 2nd frame halving the fps etc. You could append some additional data like a timestamp which will be ignored by the server(useful to prevent sharing of XHRs in case the same page gets to run on different tabs of the same browser)
 .TP
-\fB/1\fR
- This path provides 640x480 grayscale JPEGs created from the, thresholded, depth input. If multipart is enabled through the -m option(it is by default) you'll get an MJPEG stream else single snapshots per request. {WARNING} The grayscale stream is built as part of the blob tracking process. The implication of this is that you must concurently poll for the JSON data or else the JPEG stream will stall. The implication of this is that you should set the image src after you start polling for the JSON data.
+ The same scheme works with the rgb cam(entry point /2x), binary blobs(/3x but the rate is fixed to single requests ie no streaming whatsoever) and the JSON data(/0x and actually any starting character besides 1,2 and 3). In the case of json text responses Server Sent Events can, and should, be used instead of long polling XHR. Unfortunately, since browser vendors heven't yet implemented CORS for SSE(patches landing soon though) the convenience library defaults to long polling. Streaming can be activated with intrael.start(true) and disabling of CORS(On chrome you'll need the --disable-web-security flag). 
 .TP
-\fB/2\fR
- This path provides 640x480 RGB JPEGs created from the video camera input. If multipart is enabled through the -m option(it is by default) you'll get an MJPEG stream else single snapshots per request. You'll have to manually shift parts of the depth JPEGs to match the rgb camera using the value provided as the last element of the data pack for each blob(See BLOB FORMAT below). The x and y shifting modifiers can be derived from this value like this: y=<VAL>/640 and x=<VAL>%640.  If the rgb functionality was disabled with the use of the -n command line option, the regular JSON response will be returned instead.
+By appending a query string, live configuration changes can be performed. Most command line options can be used with a form like /00?z=1000&Z=2000. This example would force the engine to threshold depth from 1000 to 2000 millimetres. By default this functionality is enabled. You can disable it by specifying the option -s 0 on the command line. If -s is set to a string authentication is enabled which works as follows: The second element from the header in the JSON data output of the server(see HEADER FORMAT below) is an incrementing counter that must be concatenated with the string provided to -s (<SECRET><TIMESTAMP>) and the result md5 hashed. The hash must then be passed along with the rest of the query arguments as an s=<HASH> for the rest of the commands, provided on the same query string, to take effect. After every succesful request the hash timestamp will change requiring a repeat of the process for subsequent requests. Concurrent requests from multiple clients are troublesome as only the first one will go through changing the hash and therefore blocking the rest. 
 .TP
-\fBNOTICE\fR
- If several poll requests to the server have exactly the same paths, the browser will serialize the requests lowering the effective rate for each request. To avoid that you should request a unique path for every simultaneous request. Only the first character matters for selecting the type of data returned. So, a path of "/test3243434" will return the tracking data, a "/1dfdfdfdf" will return grayscale JPEGs and a "0ertdgf?z=..." will perform live changes.
+Finally, the entry point /4x fetches the Depth->RGB shifting tables as binary. Useful is someone wants to perform high quality cropping of features from the RGB stream.
 
 
 
-.SH "CAPABILITIES FORMAT"
+.SH "FORMAT"
  
-Each of the 8 elements of the capabilities response(path /0) are described below by index:
+.TP
+Tracking data come in numeric json arrays. The convenience library(intrael.js in resources/) automatically sets up communication with the server. The raw data are neatly packed into objects as the come and provided to a listener you specify. Here is a sample of usage:
+
+// The default address is http://127.0.0.1:6661. Override that by providing another as the argument when constructing the object
+
+var intrael = new Intrael(); 
+
+//This handler will be called at most 30 times per second
+
+intrael.addListener("data",function(e){
+ console.log(e.header); // Always 16 elements long
+ for(var i=0; i != e.blobs.length;i++){ // Array of blobs
+  console.log(e.blobs[i].left.x); // Print the leftmost point's x coordinate for every blob
+ }
+});
+
+//This will be called when connection fails
+
+intrael.addListener("error",function(){
+ // Try to reconnect every 5 seconds in case of failure
+
+ window.setTimeout(function(){intrael.start();},5000);	
+
+});
+
+// Here goes
+intrael.start();
+
+
+The first 16 elements of the JSON array from the server's response will always be present, even if no blobs were detected. Each of these elements are described below by index( and the property in the packed header object):
 
 .TP
 \fB0\fP
-Value of the -m option. Use this to setup the method of data retrieval.
+Timestamp of the current frame as provided by the kinect (header.stamp).
 .TP
 \fB1\fP
-Indicates the live config functionality staus.-1 means it's disabled, 0 means it's enabled with no need for authentication and 1 means it's enabled with authentication required.
+Timestamp of the last configuration change. See path /0 above(header.config)
 .TP
 \fB2\fP
-Flag(0/1) that indicates if RGB video was turned off with the -n option. 0 - Disabled, 1 - Enabled. 
+Background extraction mode. See -e option (header.mode).
 .TP
 \fB3\fP
-Flag(0/1) that indicates if big messages were enabled with the -n option. 0 - Normal, 1 - Big messages.
+Low x axis bound for the raster scan. See -x option (header.left).
 .TP
 \fB4\fP
-Low x axis bound for the raster scan. See -x option.
+High x axis bound for the raster scan. See -X option (header.right).
 .TP
 \fB5\fP
-High x axis bound for the raster scan. See -X option.
+Low y axis bound for the raster scan. See -y option (header.top).
 .TP
 \fB6\fP
-Low y axis bound for the raster scan. See -y option.
+High y axis bound for the raster scan. See -Y option (header.bottom).
 .TP
 \fB7\fP
-High y axis bound for the raster scan. See -Y option.
-
-
-.SH "HEADER FORMAT"
- 
-The first 16 elements of the JSON array from the server's response will always be present, even if no blobs were detected. Each of its elements are described below by index:
-
-.TP
-\fB0\fP
-Timestamp of the current frame as provided by the kinect.
-.TP
-\fB1\fP
-Timestamp of the last configuration change. See path /0 above.
-.TP
-\fB2\fP
-Background extraction mode. See -e option.
-.TP
-\fB3\fP
-Low x axis bound for the raster scan. See -x option.
-.TP
-\fB4\fP
-High x axis bound for the raster scan. See -X option.
-.TP
-\fB5\fP
-Low y axis bound for the raster scan. See -y option.
-.TP
-\fB6\fP
-High y axis bound for the raster scan. See -Y option.
-.TP
-\fB7\fP
-Low depth threshold. See -z option.
+Low depth threshold. See -z option (header.near).
 .TP
 \fB8\fP
-High depth threshold. See -Z option.
+High depth threshold. See -Z option (header.far).
 .TP
 \fB9\fP
-Low pixel count limit for blob filtering. See -c option.
+Low pixel count limit for blob filtering. See -c option (header.minpx).
 .TP
 \fB10\fP
-High pixel count limit for blob filtering. See -C option.
+High pixel count limit for blob filtering. See -C option (header.maxpx).
 .TP
 \fB11\fP
-Accelerometer X value in G.
+Accelerometer X value in G (header.ax).
 .TP
 \fB12\fP
-Accelerometer Y value in G.
+Accelerometer Y value in G (header.ay).
 .TP
 \fB13\fP
-Accelerometer Z value in G.
+Accelerometer Z value in G (header.az).
 .TP
 \fB14\fP
-Motor angle as reported by the kinect.
+Motor angle as reported by the kinect (header.angle).
 .TP
 \fB15\fP
-Motor state. 0-Not moving, 4-Moving.
+Motor state. 0-Not moving, 4-Moving (header.motor).
 
 .SH "BLOB FORMAT"
 
- After the 16 elements of the header comes the information for the detected blobs in fixed length(32) element packs. The structure of these packs is described below by index:
+ After the 16 elements of the header comes the information for the detected blobs in fixed length(32) element packs. The structure of these packs is described below by index( and the property in the packed blob object):
 
 .TP
 \fB0\fP
-x coordinate of the geometric center of the object.
+x coordinate of the geometric center of the object (blob.center.x).
 .TP
 \fB1\fP
-y coordinate of the geometric center of the object.
+y coordinate of the geometric center of the object (blob.center.y).
 .TP
 \fB2\fP
-Average depth of all object's pixels.
+Average depth of all object's pixels (blob.center.z).
 .TP
 \fB3\fP
-Background depth at the geometric center of the object.
+Background depth at the geometric center of the object (blob.center.d).
 .TP
 \fB4\fP
-x coordinate of the leftmost point of the object.
+x coordinate of the leftmost point of the object (blob.left.x).
 .TP
 \fB5\fP
-y coordinate of the leftmost point of the object.
+y coordinate of the leftmost point of the object (blob.left.y).
 .TP
 \fB6\fP
-Depth of the leftmost point of the object.
+Depth of the leftmost point of the object (blob.left.z).
 .TP
 \fB7\fP
-Background depth at the leftmost point of the object.
+Background depth at the leftmost point of the object (blob.left.d).
 .TP
 \fB8\fP
-x coordinate of the rightmost point of the object.
+x coordinate of the rightmost point of the object (blob.right.x).
 .TP
 \fB9\fP
-y coordinate of the rightmost point of the object.
+y coordinate of the rightmost point of the object (blob.right.y).
 .TP
 \fB10\fP
-Depth of the rightmost point of the object.
+Depth of the rightmost point of the object (blob.right.z).
 .TP
 \fB11\fP
-Background depth at the rightmost point of the object.
+Background depth at the rightmost point of the object (blob.right.d).
 .TP
 \fB12\fP
-x coordinate of the topmost point of the object.
+x coordinate of the topmost point of the object (blob.top.x).
 .TP
 \fB13\fP
-y coordinate of the topmost point of the object.
+y coordinate of the topmost point of the object (blob.top.y).
 .TP
 \fB14\fP
-Depth of the topmost point of the object.
+Depth of the topmost point of the object (blob.top.z).
 .TP
 \fB15\fP
-Background depth at the topmost point of the object.
+Background depth at the topmost point of the object (blob.top.d).
 .TP
 \fB16\fP
-x coordinate of the bottommost point of the object.
+x coordinate of the bottommost point of the object (blob.bottom.x).
 .TP
 \fB17\fP
-y coordinate of the bottommost point of the object.
+y coordinate of the bottommost point of the object (blob.bottom.y).
 .TP
 \fB18\fP
-Depth of the bottommost point of the object.
+Depth of the bottommost point of the object (blob.bottom.z).
 .TP
 \fB19\fP
-Background depth at the bottommost point of the object.
+Background depth at the bottommost point of the object (blob.bottom.d).
 .TP
 \fB20\fP
-x coordinate of the point of the object nearest to the camera or the background if -e is negative.
+x coordinate of the point of the object nearest to the camera (blob.near.x).
 .TP
 \fB21\fP
-y coordinate of the point of the object nearest to the camera or the background if -e is negative.
+y coordinate of the point of the object nearest to the camera (blob.near.y).
 .TP
 \fB22\fP
-Depth of the point of the object nearest to the camera or the background if -e is negative.
+Depth of the point of the object nearest to the camera (blob.near.z).
 .TP
 \fB23\fP
-Background depth at the point of the object nearest to the camera or the background if -e is negative.
+Background depth at the point of the object nearest to the camera (blob.near.d).
 .TP
 \fB24\fP
-x coordinate of the point of the object furthest from the camera or the background if -e is negative.
+x coordinate of the point of the object furthest from the camera (blob.far.x).
 .TP
 \fB25\fP
-y coordinate of the point of the object furthest from the camera or the background if -e is negative.
+y coordinate of the point of the object furthest from the camera (blob.far.y).
 .TP
 \fB26\fP
-Depth of the point of the object furthest from the camera or the background if -e is negative.
+Depth of the point of the object furthest from the camera (blob.far.z).
 .TP
 \fB27\fP
-Background depth at the point of the object furthest from the camera or the background if -e is negative.
+Background depth at the point of the object furthest from the camera (blob.far.d).
 .TP
 \fB28\fP
-Pixel count of the object.
+Pixel count of the object (blob.px).
 .TP
 \fB29\fP
-The count of continuous horizontal lines(runs) that compose the object.
+The count of continuous horizontal lines(runs) that compose the object (blob.rs).
 .TP
 \fB30\fP
-Y coordinate that indicates the area of greatest concentration of runs.
+Y coordinate that indicates the area of greatest concentration of runs (blob.vr).
 .TP
 \fB31\fP
-Shifting modifier for the rgb mask (See the description for path /2 on USAGE). 
+Composite x,y coordinate(640*y+x) of the location where the point corresponding to the geometric center is on the RGB image. Use it to adjust the depth image and crop features from the rgb camera (blob.dt).
 
 
 .SH "EXAMPLES"
@@ -322,16 +327,19 @@ Yannis Gravezas (wizgrav@gmail.com)
 
 .SH "LICENSE"
 
+This file is part of the Intrael Project which provides computer vision for the web.
+Copyright (C) 2012 Yannis Gravezas. You can contact the author at wizgrav@gmail.com.
+
 This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License v3 for more details.
+GNU Affero General Public License for more details.
 
-You should have received a copy of the GNU General Public License v3
-along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
