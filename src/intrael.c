@@ -1014,8 +1014,8 @@ int main(int argc, char **argv){
 			 }
 			 if(kick){
 				if(client->f){
+					pthread_mutex_lock(&net_mutex);		 
 					if(--client->f->c == 0){
-						pthread_mutex_lock(&net_mutex);		 
 						switch(client->f->h->t){
 								case 1: if(ngframe == client->f) ngframe = NULL; break;
 								case 2: if(nvframe == client->f) nvframe = NULL; break;
@@ -1025,7 +1025,10 @@ int main(int argc, char **argv){
 						}
 						pthread_mutex_unlock(&net_mutex);		 
 						DFRAME(client->f);
-					}else{ client->f = NULL; }
+					}else{
+						pthread_mutex_unlock(&net_mutex);		 
+						client->f = NULL; 
+					}
 					FD_CLR(client->s,&streaming);
 				} 
 				LIST_REMOVE(client,entries);
