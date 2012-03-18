@@ -708,7 +708,8 @@ pthread_attr_t attr;
 pthread_t dthread;
 pthread_t vthread;
 	 
-char *lfile,*sfile,*ofile,*ifile,regbuf[FRAME_PIXELS*2*sizeof(int32_t)+10000*sizeof(int32_t)];
+char *lfile,*sfile,*ofile,*ifile;
+int32_t regbuf[FRAME_PIXELS*2+10000];
 frame_t *ndframe,*ngframe,*nvframe,*nrframe;
 uint8_t dwait,vwait,dok,dmiss,gok,gmiss,vok,vmiss,rok,rmiss,depth_to_gray[2048],quality;
 uint16_t depth_ref[FRAME_PIXELS],depth_to_raw[10000],depth_to_mm[2048],run_y[FRAME_PIXELS/2+1],run_zv[FRAME_PIXELS/2+1],run_Zv[FRAME_PIXELS/2+1],run_sv[FRAME_PIXELS/2+1],run_ev[FRAME_PIXELS/2+1],run_s[FRAME_PIXELS/2+1],run_e[FRAME_PIXELS/2+1],run_z[FRAME_PIXELS/2+1],run_Z[FRAME_PIXELS/2+1];

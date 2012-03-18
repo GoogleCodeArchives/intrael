@@ -1,4 +1,4 @@
-intrael (2.0-0ubuntu1) oneiric; urgency=medium
+intrael (1.9-0ubuntu1) oneiric; urgency=medium
 
   * Package built with CMake
 
