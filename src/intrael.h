@@ -571,11 +571,14 @@ int die = 0;
 				 fdmax=MAX(fdmax,client->s);\
 			}\
 			client->c=0;\
+			pthread_mutex_lock(&net_mutex);\
 			if(!(--client->f->c)){\
-				 pthread_mutex_lock(&net_mutex);\
 				 if(nframe == client->f) nframe=NULL;\
 				 pthread_mutex_unlock(&net_mutex);\
-				 DFRAME(client->f); }else client->f = NULL;\
+				 DFRAME(client->f); }else{\
+					 pthread_mutex_unlock(&net_mutex);\
+				 	 client->f = NULL;\
+				 }\
 		}else{\
 			fdmax=MAX(fdmax,client->s);\
 		}\
