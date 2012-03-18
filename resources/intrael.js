@@ -50,7 +50,7 @@ function Intrael(uri,sse){
     this._erlisteners = [];
     this.uri = uri ? uri : "http://127.0.0.1:6661";
     this.query = null;
-    this.xtra = "";
+    this.extra = "";
     this.uniq = Date.now();
 	this.sse = sse ? true : false;
 }
@@ -119,7 +119,7 @@ Intrael.prototype = {
 			this.evs.onerror = this._error.bind(this);
 			if (window.XDomainRequest) {
 				this.xhr = new XDomainRequest();
-			 else {
+			} else {
 				this.xhr = new XMLHttpRequest();
 			}
 		}else{
@@ -139,10 +139,10 @@ Intrael.prototype = {
 		if(this.query){
 			var opt=[];
 			for(var i in this.query) opt.push( i+"="+this.query[i]);
-			extra = "?"+opt.join("&");
+			this.extra = "?"+opt.join("&");
 		}
-        this.xhr.open("GET", this.uri+this.id+extra);
-        var extra="";
+        this.xhr.open("GET", this.uri+"/00"+this.uniq+this.extra);
+        this.extra="";
 		this.xhr.send(null);	
 	},
 
@@ -201,6 +201,6 @@ Intrael.prototype = {
 			}
 			blobs.push(blob);
 		}
-		return {'blobs':blobs,'header':{'time':data[0],'cfg':data[1],'mode':data[2],'left':data[3],'right':data[4],'top':data[5],'bottom':data[6],'near':data[7],'far':data[8],'minpx':data[9],'maxpx':data[10],'acx':data[11],'acy':data[12],'acz':data[13],'angle':data[14],'motor':data[15]}};
+		return {'blobs':blobs,'header':{'stamp':data[0],'config':data[1],'mode':data[2],'left':data[3],'right':data[4],'top':data[5],'bottom':data[6],'near':data[7],'far':data[8],'minpx':data[9],'maxpx':data[10],'ax':data[11],'ay':data[12],'az':data[13],'angle':data[14],'motor':data[15]}};
 	}
 };
