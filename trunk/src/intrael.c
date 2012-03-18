@@ -566,8 +566,8 @@ void *depth_thread(){
 				da = (uint32_t) (x+640*y);
 				dzv=depth_to_mm[l_sum[label]/l];
 				int rshift=0;
-				int dy =  regbuf[2*da+1];
-				int dx = (regbuf[2*da] + regbuf[FRAME_PIXELS*2+dzv]) >> 8;
+				int dy =  regbuf[FRAME_PIXELS+da];
+				int dx = (regbuf[da] + regbuf[FRAME_PIXELS*2+dzv]) >> 8;
 				if(dx < 640){
 					rshift=640*dy+dx;
 				}
@@ -848,12 +848,17 @@ int main(int argc, char **argv){
 		depth_to_raw[i]=ni;
 	}
 	for(;i!=16384;i++) depth_to_raw[i]=0;
-	memcpy(regbuf,reg.registration_table,FRAME_PIXELS*2*sizeof(int32_t));
-	memcpy(regbuf+FRAME_PIXELS*2*sizeof(int32_t),reg.depth_to_rgb_shift,sizeof( int32_t) * 10000);
+	for(ni=0;ni!=FRAME_PIXELS;ni++){
+		regbuf[ni] = reg.registration_table[ni][0];
+		regbuf[FRAME_PIXELS+ni] = reg.registration_table[ni][1];
+	}
+	for(ni=FRAME_PIXELS*2,i=0;ni!=FRAME_PIXELS*2+10000;ni++,i++){
+		regbuf[ni] = reg.depth_to_rgb_shift[i];
+	}
 	freenect_destroy_registration(&reg);
 	HSET(reghead,STR_REG,STR_REG,4);
 	CFRAME(regframe,reghead,0);
-	regframe->buf = regbuf;
+	regframe->buf = (char *)regbuf;
 	regframe->l = 2497600;
 	regframe->c=1;
 	led=LED_OFF;

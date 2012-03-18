@@ -73,6 +73,18 @@ else (LIBFREENECT_LIBRARIES AND LIBFREENECT_INCLUDE_DIRS)
       /opt/local/lib
       /sw/lib
   )
+  
+  find_path(LIBFREENECT_STATIC_DIR
+    NAMES
+	libfreenect.a
+    PATHS
+      /usr/local/lib64
+      /usr/lib
+      /usr/local/lib
+      /opt/local/lib
+      /sw/lib
+   )
+  
   set(LIBFREENECT_INCLUDE_DIRS
     ${LIBFREENECT_INCLUDE_DIR}
   )
@@ -81,6 +93,9 @@ else (LIBFREENECT_LIBRARIES AND LIBFREENECT_INCLUDE_DIRS)
   )
   set(LIBFREENECT_LIBRARIES
     ${LIBFREENECT_LIBRARY}
+)
+set(LIBFREENECT_STATIC
+    ${LIBFREENECT_STATIC_DIR}/libfreenect.a
 )
   if (LIBFREENECT_INCLUDE_DIRS AND LIBFREENECT_LIBRARIES AND LIBFREENECT_REG_INCLUDE_DIRS)
      set(LIBFREENECT_FOUND TRUE)
@@ -91,6 +106,7 @@ else (LIBFREENECT_LIBRARIES AND LIBFREENECT_INCLUDE_DIRS)
       message(STATUS "Found libfreenect:")
 	  message(STATUS " - Includes: ${LIBFREENECT_INCLUDE_DIRS}")
 	  message(STATUS " - Libraries: ${LIBFREENECT_LIBRARIES}")
+	  message(STATUS " - Static: ${LIBFREENECT_STATIC}")
     
     endif (NOT libfreenect_FIND_QUIETLY)
   else (LIBFREENECT_FOUND)

@@ -1,8 +1,16 @@
+# - Try to find libusb-1.0
+# Once done this will define
+#
+#  LIBUSB_1_FOUND - system has libusb
+#  LIBUSB_1_INCLUDE_DIRS - the libusb include directory
+#  LIBUSB_1_LIBRARIES - Link these to use libusb
+#  LIBUSB_1_DEFINITIONS - Compiler switches required for using libusb
+#
 #  Adapted from cmake-modules Google Code project
 #
 #  Copyright (c) 2006 Andreas Schneider <mail@cynapses.org>
 #
-#  (Changes for libfreenect) Copyright (c) 2011 Yannis Gravezas <wizgrav@infrael.com>
+#  (Changes for libusb) Copyright (c) 2008 Kyle Machulis <kyle@nonpolynomial.com>
 #
 # Redistribution and use is allowed according to the terms of the New BSD license.
 #
@@ -35,77 +43,66 @@
 #
 
 
-if (LIBJPEG_LIBRARIES AND LIBJPEG_INCLUDE_DIRS)
+if (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
   # in cache already
-  set(LIBJPEG_FOUND TRUE)
-else (LIBJPEG_LIBRARIES AND LIBJPEG_INCLUDE_DIRS)
-  find_path(LIBJPEG_INCLUDE_DIR
+  set(LIBUSB_FOUND TRUE)
+else (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
+  find_path(LIBUSB_1_INCLUDE_DIR
     NAMES
-	jpeglib.h
+	libusb-1.0/libusb.h
     PATHS
-	  /opt/libjpeg-turbo/include
-      /usr/include/libjpeg-turbo
-      /usr/include/libjpeg
-      /usr/local/include/libjpeg-turbo
-      /usr/local/include/libjpeg
-    PATH_SUFFIXES
-	  libjpeg-turbo
-	  libjpeg
-	NO_DEFAULT_PATH
+      /usr/include
+      /usr/local/include
+      /opt/local/include
+      /sw/include
+	PATH_SUFFIXES
+	  libusb-1.0
   )
 
-  find_library(LIBJPEG_LIBRARY
+  find_library(LIBUSB_1_LIBRARY
     NAMES
-      jpeg
+      usb-1.0
     PATHS
-	  /opt/libjpeg-turbo/lib
-      /usr/local/lib64
       /usr/lib
       /usr/local/lib
       /opt/local/lib
       /sw/lib
-    NO_DEFAULT_PATH
   )
-  find_path(LIBJPEG_STATIC_DIR
+  find_path(LIBUSB_1_STATIC_DIR
     NAMES
-	libjpeg.a
+	libusb-1.0.a
     PATHS
-	  /opt/libjpeg-turbo/lib
-      /usr/local/lib64
       /usr/lib
       /usr/local/lib
       /opt/local/lib
       /sw/lib
-    NO_DEFAULT_PATH
   )
-  set(LIBJPEG_INCLUDE_DIRS
-    ${LIBJPEG_INCLUDE_DIR}
+  set(LIBUSB_1_INCLUDE_DIRS
+    ${LIBUSB_1_INCLUDE_DIR}
   )
-  set(LIBJPEG_LIBRARIES
-    ${LIBJPEG_LIBRARY}
+  set(LIBUSB_1_LIBRARIES
+    ${LIBUSB_1_LIBRARY}
 )
-  set(LIBJPEG_STATIC
-    ${LIBJPEG_STATIC_DIR}/libjpeg.a
+set(LIBUSB_1_STATIC
+    ${LIBUSB_1_STATIC_DIR}/libusb-1.0.a
 )
-  if (LIBJPEG_INCLUDE_DIRS AND LIBJPEG_LIBRARIES)
-     set(LIBJPEG_FOUND TRUE)
-  endif (LIBJPEG_INCLUDE_DIRS AND LIBJPEG_LIBRARIES)
+  if (LIBUSB_1_INCLUDE_DIRS AND LIBUSB_1_LIBRARIES)
+     set(LIBUSB_1_FOUND TRUE)
+  endif (LIBUSB_1_INCLUDE_DIRS AND LIBUSB_1_LIBRARIES)
 
-  if (LIBJPEG_FOUND)
-    if (NOT libjpeg_FIND_QUIETLY)
-      message(STATUS "Found libjpeg:")
-	  message(STATUS " - Includes: ${LIBJPEG_INCLUDE_DIRS}")
-	  message(STATUS " - Libraries: ${LIBJPEG_LIBRARIES}")
-	  message(STATUS " - Static: ${LIBJPEG_STATIC}")
-	  
-    endif (NOT libjpeg_FIND_QUIETLY)
-  else (LIBJPEG_FOUND)
-    if (libjpeg_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find libjpeg")
-    endif (libjpeg_FIND_REQUIRED)
-  endif (LIBJPEG_FOUND)
+  if (LIBUSB_1_FOUND)
+    if (NOT libusb_1_FIND_QUIETLY)
+      message(STATUS "Found libusb-1.0:")
+	  message(STATUS " - Includes: ${LIBUSB_1_INCLUDE_DIRS}")
+	  message(STATUS " - Libraries: ${LIBUSB_1_LIBRARIES}")
+	  message(STATUS " - Static: ${LIBUSB_1_STATIC}")
+    endif (NOT libusb_1_FIND_QUIETLY)
+  else (LIBUSB_1_FOUND)
+      message(STATUS "No libusb-1.0-dev: Static compile disabled")
+	  SET(COMPILE_STATIC FALSE)
+  endif (LIBUSB_1_FOUND)
 
-  # show the LIBFREENECT_INCLUDE_DIRS and LIBFREENECT_LIBRARIES variables only in the advanced view
-  mark_as_advanced(LIBJPEG_INCLUDE_DIRS LIBJPEG_LIBRARIES)
+  # show the LIBUSB_1_INCLUDE_DIRS and LIBUSB_1_LIBRARIES variables only in the advanced view
+  mark_as_advanced(LIBUSB_1_INCLUDE_DIRS LIBUSB_1_LIBRARIES)
 
-endif (LIBJPEG_LIBRARIES AND LIBJPEG_INCLUDE_DIRS)
+endif (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
