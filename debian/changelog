@@ -1,3 +1,27 @@
+intrael (1.9-0ubuntu5) oneiric; urgency=medium
+
+  * Oioioioi
+
+ -- Yannis Gravezas <wizgrav@gmail.com>  Wed, 18 Mar 2012 19:28:33 +0200
+
+intrael (1.9-0ubuntu4) oneiric; urgency=medium
+
+  * Lalalala
+
+ -- Yannis Gravezas <wizgrav@gmail.com>  Wed, 18 Mar 2012 18:28:33 +0200
+
+intrael (1.9-0ubuntu3) oneiric; urgency=medium
+
+  * More fixes
+
+ -- Yannis Gravezas <wizgrav@gmail.com>  Wed, 18 Mar 2012 14:28:33 +0200
+
+intrael (1.9-0ubuntu2) oneiric; urgency=medium
+
+  * Fixes
+
+ -- Yannis Gravezas <wizgrav@gmail.com>  Wed, 18 Mar 2012 13:28:33 +0200
+
 intrael (1.9-0ubuntu1) oneiric; urgency=medium
 
   * Package built with CMake
