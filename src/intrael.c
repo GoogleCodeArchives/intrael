@@ -384,17 +384,12 @@ void *depth_thread(){
 				dwait--;
 				pthread_mutex_unlock(&depth_mutex);
 				break;
-			} 
+			}
+			encode = (gmiss == 2 || ghead->c > frmax) ? 0:1;
+			dmap = (rmiss == 2 || rhead->c > umax) ? 0:1;
 			pthread_mutex_unlock(&net_mutex);
 			if(!dframe){ CFRAME(dframe,dhead,65536); }
-			do{
-				encode=0;
-				pthread_mutex_lock(&net_mutex);
-				if(gmiss == 2 || ghead->c > frmax){
-					pthread_mutex_unlock(&net_mutex);
-					break;
-				}
-				pthread_mutex_unlock(&net_mutex);
+			if(encode){
 				if(gmin != gmax){
 					ni = depth_to_mm[gmax];
 					ftmp = ni - depth_to_mm[gmin];
@@ -404,23 +399,14 @@ void *depth_thread(){
 					#endif
 				}
 				if(!gframe){ CFRAME(gframe,ghead,65536); }
-				encode=1;
 				jpeg_set_frame(&ginfo,gframe->buf+53, &len);
                 jpeg_start_compress( &ginfo, TRUE );
                 for(y=0;y!=t_y;y++) jpeg_write_scanlines(&ginfo,&jblack, TRUE);
-            }while(0);
-            do{
-				dmap=0;
-				pthread_mutex_lock(&net_mutex);
-				if(rmiss == 2 || rhead->c > umax){
-					pthread_mutex_unlock(&net_mutex);
-					break;
-				}
-				pthread_mutex_unlock(&net_mutex);
+			}
+			if(dmap){
 				if(!rframe){ CFRAME(rframe,rhead,614400);}
-				dmap = 1;
 				dref=(uint16_t *)rframe->buf;
-			}while(0);
+			}
             #if defined USE_SSE
 			__m64 mmask=_mm_set1_pi16(2047);
 			#elif defined USE_SSE2
