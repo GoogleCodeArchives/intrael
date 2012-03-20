@@ -69,6 +69,8 @@ else (LIBFREENECT_LIBRARIES AND LIBFREENECT_INCLUDE_DIRS)
     PATHS
       /usr/local/lib64
       /usr/lib
+      /usr/lib/x86_64-linux-gnu
+      /usr/lib/i386-linux-gnu
       /usr/local/lib
       /opt/local/lib
       /sw/lib
@@ -79,6 +81,8 @@ else (LIBFREENECT_LIBRARIES AND LIBFREENECT_INCLUDE_DIRS)
 	libfreenect.a
     PATHS
       /usr/local/lib64
+      /usr/lib/x86_64-linux-gnu
+      /usr/lib/i386-linux-gnu
       /usr/lib
       /usr/local/lib
       /opt/local/lib
@@ -106,12 +110,15 @@ set(LIBFREENECT_STATIC
       message(STATUS "Found libfreenect:")
 	  message(STATUS " - Includes: ${LIBFREENECT_INCLUDE_DIRS}")
 	  message(STATUS " - Libraries: ${LIBFREENECT_LIBRARIES}")
-	  message(STATUS " - Static: ${LIBFREENECT_STATIC}")
-    
+	  if(LIBFREENECT_STATIC_DIR)
+		message(STATUS " - Static: ${LIBFREENECT_STATIC}")
+	  else(LIBFREENECT_STATIC_DIR)
+		SET(COMPILE_STATIC FALSE)
+	  endif(LIBFREENECT_STATIC_DIR)
     endif (NOT libfreenect_FIND_QUIETLY)
   else (LIBFREENECT_FOUND)
     if (LIBFREENECT_INCLUDE_DIRS AND NOT LIBFREENECT_REG_INCLUDE_DIRS)
-      message(FATAL_ERROR "You should grab the unstable branch of libfreenect from https://github.com/OpenKinect/libfreenect")
+      message(FATAL_ERROR "You're using a very old version of libfreenect")
     endif (LIBFREENECT_INCLUDE_DIRS AND NOT LIBFREENECT_REG_INCLUDE_DIRS)
   
     if (libfreenect_FIND_REQUIRED)

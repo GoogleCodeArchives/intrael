@@ -400,7 +400,7 @@ int die = 0;
 			  return 0;\
 		case 'n': video = 0;\
 				  break;\
-		case 'j': IOPT(optarg,quality,25,75);\
+		case 'j': IOPT(optarg,quality,0,75);\
 		case 's': if(strlen(optarg)==1 && optarg[0]=='0'){sec=0; break;}\
 				  secret = strdup(optarg);\
 				  mbuf = (unsigned char *) malloc(strlen(secret)+16);\
@@ -487,41 +487,41 @@ int die = 0;
 	frame->h = head;\
 	head->c++;\
 	frame->c=0;\
+	frame->d=0;\
 	frame->t=0
-#define DFRAME(frame)\
-	free(frame->buf);\
-	frame->h->c--;\
-	frame->h=NULL;\
-	free(frame);\
-	frame=NULL
-#define FSWAP(ok,frame,nframe,miss)\
+#define FSWAP(frame,nframe,miss,frames,entry)\
 	pthread_mutex_lock(&net_mutex);\
-	if(ok){\
-		ok=0;\
+	LIST_FOREACH(tframe, &frames, entry){\
+		if(tframe->c == tframe->d){\
+			LIST_REMOVE(tframe,entry);\
+			free(tframe->buf);\
+			tframe->h->c--;\
+			tframe->h=NULL;\
+			free(tframe);\
+		}\
+	}\
+	if(!nframe){\
+		nframe = frame;\
+		frame = NULL;\
+	}else if(nframe->c){\
+		LIST_INSERT_HEAD(&frames, nframe, entry);\
 		nframe = frame;\
 		frame = NULL;\
 	}else{\
 		if(++miss < 2){\
-			if(nframe){\
 				tframe=nframe;\
 				nframe=frame;\
 				frame=tframe;\
-			}else{\
-				nframe = frame;\
-				frame=NULL;\
-			}\
 		}else{\
-			if(nframe){\
-				free(nframe->buf);\
-				nframe->h->c--;\
-				nframe->h=NULL;\
-				free(nframe);\
-				nframe=NULL;\
-			}\
+			free(nframe->buf);\
+			nframe->h->c--;\
+			nframe->h=NULL;\
+			free(nframe);\
+			nframe=NULL;\
 		}\
 	}\
 	pthread_mutex_unlock(&net_mutex)
-#define SEL(count,ok,miss,entry,frame)\
+#define SEL(count,miss,entry,frame)\
 	if(!LIST_EMPTY(&count)){\
 		if(frame){\
 			LIST_FOREACH(client, &count, entry){\
@@ -535,13 +535,17 @@ int die = 0;
 				 frame->c++;\
 				 client->c=0;\
 				 client->t=frame->t;\
-				 ok=1;\
 				 fdmax=MAX(client->s,fdmax);\
 			}\
 		}\
 		miss=0;\
 	}
-#define STREAM(cls,entr,mod,off,nframe)\
+#define DFRAME(frame)\
+	pthread_mutex_lock(&net_mutex);\
+	(frame)->d++;\
+	pthread_mutex_unlock(&net_mutex);\
+	frame = NULL
+#define STREAM(cls,entr,mod,off)\
 	if(client->m){\
 		if(client->b < client->f->h->ml){\
 			VSEND(client->f->h->mbuf,client->f->buf + mod,client->f->h->ml,client->f->l - mod);\
@@ -571,14 +575,7 @@ int die = 0;
 				 fdmax=MAX(fdmax,client->s);\
 			}\
 			client->c=0;\
-			pthread_mutex_lock(&net_mutex);\
-			if(!(--client->f->c)){\
-				 if(nframe == client->f) nframe=NULL;\
-				 pthread_mutex_unlock(&net_mutex);\
-				 DFRAME(client->f); }else{\
-					 pthread_mutex_unlock(&net_mutex);\
-				 	 client->f = NULL;\
-				 }\
+			DFRAME(client->f);\
 		}else{\
 			fdmax=MAX(fdmax,client->s);\
 		}\
@@ -637,11 +634,14 @@ typedef struct header_t{
 } header_t;
 
 typedef struct frame_t{
-    uint32_t l,c,t;
+    uint32_t l,c,t,d;
     header_t *h;
     char *buf;
+    LIST_ENTRY(frame_t) dentries;
+    LIST_ENTRY(frame_t) gentries;
+    LIST_ENTRY(frame_t) ventries;
+    LIST_ENTRY(frame_t) rentries;
 } frame_t;
-
 
 typedef struct origin_t{
     char *n;
@@ -714,7 +714,7 @@ pthread_t vthread;
 char *lfile,*sfile,*ofile,*ifile;
 int32_t regbuf[FRAME_PIXELS*2+10000];
 frame_t *ndframe,*ngframe,*nvframe,*nrframe;
-uint8_t dwait,vwait,dok,dmiss,gok,gmiss,vok,vmiss,rok,rmiss,depth_to_gray[2048],quality;
+uint8_t dwait,vwait,dmiss,gmiss,vmiss,rmiss,depth_to_gray[2048],quality;
 uint16_t depth_ref[FRAME_PIXELS],depth_to_raw[10000],depth_to_mm[2048],run_y[FRAME_PIXELS/2+1],run_zv[FRAME_PIXELS/2+1],run_Zv[FRAME_PIXELS/2+1],run_sv[FRAME_PIXELS/2+1],run_ev[FRAME_PIXELS/2+1],run_s[FRAME_PIXELS/2+1],run_e[FRAME_PIXELS/2+1],run_z[FRAME_PIXELS/2+1],run_Z[FRAME_PIXELS/2+1];
 uint32_t r_label[FRAME_PIXELS/2+1],run_sum[FRAME_PIXELS/2+1],run_label[FRAME_PIXELS/2+1],l_pos_x[FRAME_PIXELS/2+1],l_pos_X[FRAME_PIXELS/2+1],l_pos_y[FRAME_PIXELS/2+1],l_pos_Y[FRAME_PIXELS/2+1],l_pos_z[FRAME_PIXELS/2+1],l_pos_Z[FRAME_PIXELS/2+1],l_cx[FRAME_PIXELS/2+1],l_cy[FRAME_PIXELS/2+1],l_sum[FRAME_PIXELS/2+1],l_count[FRAME_PIXELS/2+1],l_runs[FRAME_PIXELS/2+1],l_vrun[FRAME_PIXELS/2+1],l_checked[FRAME_PIXELS/2+1],dstamp,vstamp,dcb,vcb,led;
 int32_t gbuf[128],umax,frmax;

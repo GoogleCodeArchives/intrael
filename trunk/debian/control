@@ -3,11 +3,12 @@ Section: web
 Priority: optional
 DM-Upload-Allowed: yes
 Maintainer: Yannis Gravezas <wizgrav@gmail.com>
-Build-Depends: debhelper, cdbs, cmake, libfreenect-dev, libjpeg-turbo62, libusb-1.0-0-dev
+Build-Depends: debhelper, cdbs, cmake, libfreenect-dev, libjpeg62-dev
 Standards-Version: 3.9.2
-Homepage: http://www.openkinect.org/
+Homepage: http://www.intrael.com/
 
 Package: intrael
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends} , libusb-1.0-0
+Depends: ${shlibs:Depends}, ${misc:Depends} , libjpeg62, libfreenect
+Recommends: libjpeg-turbo
 Description:  Intrael server - HTTP interface for the MS Kinect - binary

@@ -171,6 +171,12 @@ void *depth_thread(){
 	HSET(dhead,STR_JSON_S,STR_JSON_M,0);
 	HSET(ghead,STR_JPEG_S,STR_JPEG_M,1);
 	HSET(rhead,STR_DUMP,STR_DUMP,3);
+	LIST_HEAD(, frame_t) dframes;
+	LIST_INIT(&dframes);
+	LIST_HEAD(, frame_t) gframes;
+	LIST_INIT(&gframes);
+	LIST_HEAD(, frame_t) rframes;
+	LIST_INIT(&rframes);
 	memset(&jerr, 0, sizeof(jerr));
 	JSET(ginfo,JCS_GRAYSCALE,1);
 	MSTATE();
@@ -498,14 +504,14 @@ void *depth_thread(){
 				memcpy(gframe->buf,buf,sprintf(buf,STR_JPEG,len));
 				gframe->l=len+53;
 				gframe->t=dstamp;
-				FSWAP(gok,gframe,ngframe,gmiss);
+				FSWAP(gframe,ngframe,gmiss,gframes,gentries);
 				memset(gray,0,640);
 			}
 			if(dmap){
 				for(;y!=480;y++,dref += 640) memset(dref,0, 1280);
 				rframe->l=614400;
 				rframe->t=dstamp;
-				FSWAP(rok,rframe,nrframe,rmiss);
+				FSWAP(rframe,nrframe,rmiss,rframes,rentries);
 			}
 			ni=0;
 			while(--n){
@@ -579,7 +585,7 @@ void *depth_thread(){
 			memcpy(dframe->buf,buf,sprintf(buf,STR_JSON,len-59));
 			dframe->l = len;
 			dframe->t=dstamp;
-			FSWAP(dok,dframe,ndframe,dmiss);
+			FSWAP(dframe,ndframe,dmiss,dframes,dentries);
 		}while(0);
 	}
 	return 0;
@@ -606,6 +612,8 @@ void *video_thread(){
 	static uint8_t *vraw;
 	unsigned char*jrgb=(unsigned char*)rgb;
 	HSET(vhead,STR_JPEG_S,STR_JPEG_M,2);
+	LIST_HEAD(, frame_t) vframes;
+	LIST_INIT(&vframes);
 	memset(&jerr, 0, sizeof(jerr));
 	JSET(cinfo,JCS_RGB,3);
 	while(1){
@@ -710,7 +718,7 @@ void *video_thread(){
 			memcpy(vframe->buf,buf,sprintf(buf,STR_JPEG,len));
 			vframe->l=len;
 			vframe->t=vstamp;
-			FSWAP(vok,vframe,nvframe,vmiss);
+			FSWAP(vframe,nvframe,vmiss,vframes,ventries);
 		}while(0);
 	}
 	return 0;
@@ -769,7 +777,7 @@ int main(int argc, char **argv){
 	lport = 6661;
 	nrframe = ndframe = ngframe = nvframe = NULL;
 	yes = dwait = vwait =  video =  sec = 1;
-	depth_to_mm[0] = depth_to_mm[2047] = listener   = camera  = rok = dok = vok = gok = rmiss = dmiss = vmiss = gmiss = admin_org_len =  0;
+	depth_to_mm[0] = depth_to_mm[2047] = listener   = camera   = rmiss = dmiss = vmiss = gmiss = admin_org_len =  0;
 	lfile = sfile = ofile = ifile = secret = serial = admin_org = NULL;
 	mbuf=NULL;
 	cmax=1024;
@@ -806,6 +814,8 @@ int main(int argc, char **argv){
 		 RSWITCH(c1,optarg);	
 		 NSWITCH(c1);	
 	}
+	if(!quality) video=0;
+	if(umax && umax < 3) umax=3;
 	if(secret){HASH(cc);}
 	memcpy(gbuf,cbuf,512);
 	memcpy(ncbuf,cbuf,512);
@@ -860,7 +870,6 @@ int main(int argc, char **argv){
 	CFRAME(regframe,reghead,0);
 	regframe->buf = (char *)regbuf;
 	regframe->l = 2497600;
-	regframe->c=1;
 	led=LED_OFF;
 	pthread_attr_init(&attr);
 	pthread_attr_setstacksize (&attr, stacksize);
@@ -897,10 +906,10 @@ int main(int argc, char **argv){
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 0;
 		pthread_mutex_lock(&net_mutex);
-		SEL(dclients,dok,dmiss,dentries,ndframe);
-		SEL(vclients,vok,vmiss,ventries,nvframe);
-		SEL(gclients,gok,gmiss,gentries,ngframe);
-		SEL(rclients,rok,rmiss,rentries,nrframe);
+		SEL(dclients,dmiss,dentries,ndframe);
+		SEL(vclients,vmiss,ventries,nvframe);
+		SEL(gclients,gmiss,gentries,ngframe);
+		SEL(rclients,rmiss,rentries,nrframe);
 		pthread_mutex_unlock(&net_mutex);
 		rd = master;
 		wr = streaming;
@@ -984,13 +993,13 @@ int main(int argc, char **argv){
 						  if(c2 < 0 || c2 > 9) c2=0;
 						  switch(c1){
 							  case '1': 
-								LIST_INSERT_HEAD(&gclients, client, gentries);
+								if(quality) LIST_INSERT_HEAD(&gclients, client, gentries); else kick=1;
 								break;
 							  case '2':
 							    if(video) LIST_INSERT_HEAD(&vclients, client, ventries); else kick=1;
 							    break;
 							  case '3':
-							    LIST_INSERT_HEAD(&rclients, client, rentries);
+							    if(umax) LIST_INSERT_HEAD(&rclients, client, rentries); else kick=1;
 							    c2=0;
 							    break;
 							  case '4': RSEL(regframe);
@@ -1003,32 +1012,18 @@ int main(int argc, char **argv){
 				}else kick = 1;
 			 }else if(FD_ISSET(client->s,&wr)){
 				 switch(client->f->h->t){
-					 case 1: STREAM(gclients,gentries,0,client->f->h->ml - 11,ngframe);
-					 case 2: STREAM(vclients,ventries,0,client->f->h->ml - 11,nvframe);
+					 case 1: STREAM(gclients,gentries,0,client->f->h->ml - 11);
+					 case 2: STREAM(vclients,ventries,0,client->f->h->ml - 11);
 					 case 3: 
-					 case 4: STREAM(rclients,rentries,0,0,nrframe);
-					 default: STREAM(dclients,dentries,59,client->f->h->ml - 5,ndframe);
+					 case 4: STREAM(rclients,rentries,0,0);
+					 default: STREAM(dclients,dentries,59,client->f->h->ml - 5);
 				 }
 			 }else{
 				 fdmax=MAX(client->s,fdmax);
 			 }
 			 if(kick){
 				if(client->f){
-					pthread_mutex_lock(&net_mutex);		 
-					if(--client->f->c == 0){
-						switch(client->f->h->t){
-								case 1: if(ngframe == client->f) ngframe = NULL; break;
-								case 2: if(nvframe == client->f) nvframe = NULL; break;
-								case 3: if(nrframe == client->f) nrframe = NULL; break;
-								case 4: break;
-								default: if(ndframe == client->f) ndframe = NULL; break;
-						}
-						pthread_mutex_unlock(&net_mutex);		 
-						DFRAME(client->f);
-					}else{
-						pthread_mutex_unlock(&net_mutex);		 
-						client->f = NULL; 
-					}
+					DFRAME(client->f);
 					FD_CLR(client->s,&streaming);
 				} 
 				LIST_REMOVE(client,entries);
