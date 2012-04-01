@@ -867,7 +867,7 @@ int main(int argc, char **argv)
 	lport = 6661;
 	nrframe = ndframe = ngframe = nvframe = NULL;
 	yes = dwait = vwait =  video =  sec = 1;
-	depth_to_mm[0] = depth_to_mm[2047] = listener   = camera = rmiss = dmiss = vmiss = gmiss = admin_org_len =  gcount= 0;
+	depth_to_mm[0] = depth_to_mm[2047] = listener   = camera = rmiss = dmiss = vmiss = gmiss = admin_org_len =0;
 	lfile = sfile = ofile = ifile = rfile = secret = serial = admin_org = NULL;
 	mbuf=NULL;
 	cmax=1024;
