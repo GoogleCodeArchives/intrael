@@ -63,9 +63,9 @@ int die = 0;
 	sdata[1].buf = bufy;\
 	sdata[1].len = (leny);\
 	if(WSASend(client->s,sdata,2,&stmp,NULL,NULL,NULL)) stmp=-1
-#define VSND(hbuf,hlen)\
-	sdata[0].buf = (hbuf) + client->b;\
-	sdata[0].len = (hlen) - client->b;\
+#define VSND(hbuf,hlen,leny)\
+	sdata[0].buf = (hbuf)+client->b-(hlen);\
+	sdata[0].len = (leny)-client->b+(hlen);\
 	if(WSASend(client->s,sdata,1,&stmp,NULL,NULL,NULL)) stmp=-1	
 typedef int in_addr_t;
 
