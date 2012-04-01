@@ -749,7 +749,6 @@ frame_t *ndframe,*ngframe,*nvframe,*nrframe;
 uint8_t dwait,vwait,dmiss,gmiss,vmiss,rmiss,depth_to_gray[2048],quality;
 uint16_t depth_ref[FRAME_PIXELS],depth_to_raw[10000],depth_to_mm[2048],run_y[FRAME_PIXELS/2+1],run_zv[FRAME_PIXELS/2+1],run_Zv[FRAME_PIXELS/2+1],run_sv[FRAME_PIXELS/2+1],run_ev[FRAME_PIXELS/2+1],run_s[FRAME_PIXELS/2+1],run_e[FRAME_PIXELS/2+1],run_z[FRAME_PIXELS/2+1],run_Z[FRAME_PIXELS/2+1];
 uint32_t r_label[FRAME_PIXELS/2+1],run_sum[FRAME_PIXELS/2+1],run_label[FRAME_PIXELS/2+1],l_pos_x[FRAME_PIXELS/2+1],l_pos_X[FRAME_PIXELS/2+1],l_pos_y[FRAME_PIXELS/2+1],l_pos_Y[FRAME_PIXELS/2+1],l_pos_z[FRAME_PIXELS/2+1],l_pos_Z[FRAME_PIXELS/2+1],l_cx[FRAME_PIXELS/2+1],l_cy[FRAME_PIXELS/2+1],l_sum[FRAME_PIXELS/2+1],l_count[FRAME_PIXELS/2+1],l_runs[FRAME_PIXELS/2+1],l_vrun[FRAME_PIXELS/2+1],l_checked[FRAME_PIXELS/2+1],dstamp,vstamp,dcb,vcb,led;
-volatile uint32_t gcount;
 int32_t gbuf[128],umax,frmax;
 freenect_context *f_ctx;
 freenect_device *f_dev;
