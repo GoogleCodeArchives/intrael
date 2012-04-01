@@ -60,7 +60,7 @@ else (LIBJPEG_LIBRARIES AND LIBJPEG_INCLUDE_DIRS)
       jpeg
       jpeg62
     PATHS
-	  /opt/libjpeg-turbo/libg
+	  /opt/libjpeg-turbo/lib
       /usr/local/lib64
       /usr/lib/x86_64-linux-gnu
       /usr/lib/i386-linux-gnu
