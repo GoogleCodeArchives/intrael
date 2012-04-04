@@ -43,7 +43,6 @@ int die = 0;
 		fputc(c,stderr);\
 		fputc('\n',stderr);\
 	}
-#include <errno.h>
 #if defined WIN32
 
 #include <winsock2.h>
@@ -81,6 +80,7 @@ typedef int in_addr_t;
 #include <arpa/inet.h>
 #include <sys/uio.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR   -1
@@ -89,6 +89,9 @@ typedef int in_addr_t;
 #define NONBLOCKING(s) fcntl(s, F_SETFL, fcntl(s,F_GETFL,0) | O_NONBLOCK)
 #define INITSOCKET(s) 	if((s = socket(AF_INET, SOCK_STREAM, 0)) == SOCKET_ERROR) exit(1);\
 	if(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == SOCKET_ERROR) exit(1)
+#define WSAEWOULDBLOCK EWOULDBLOCK
+#define WSAEINTR EINTR
+#define WSAEAGAIN EAGAIN 
 typedef int DWORD;
 #define VSEND(hbuf,buf,hlen,len)\
 	sdata[0].iov_base = (hbuf)+(client->b);\
@@ -108,9 +111,6 @@ typedef int SOCKET;
 #include "queue.h"
 #include "md5.h"
 
-#define WSAEWOULDBLOCK EWOULDBLOCK
-#define WSAEINTR EINTR
-#define WSAEAGAIN EAGAIN 
 #define MISSED 2
 #define MAX_BYTES 65400
 #define FRAME_PIXELS 307200
