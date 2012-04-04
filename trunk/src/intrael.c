@@ -942,7 +942,8 @@ int main(int argc, char **argv)
 	if(video) freenect_start_video(f_dev);
 	reg=freenect_copy_registration(f_dev);
 	depth_to_mm[0]=depth_to_raw[0]=0;
-	for(i=1; i!=2048; i++) depth_to_mm[i] = reg.raw_to_mm_shift[i];
+	for(i=1; i!=1054; i++) depth_to_mm[i] = reg.raw_to_mm_shift[i];
+	for(; i!=2048; i++) depth_to_mm[i] = 0;
 	for(ni=0,i=1; i!=10000; i++) {
 		while(depth_to_mm[ni]<i) ni++;
 		depth_to_raw[i]=ni;
