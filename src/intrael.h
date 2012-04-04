@@ -421,7 +421,7 @@ typedef int SOCKET;
 	case 'f': IOPT(optarg,frmax,3,1000);\
 	case 'd': sfile = strdup(optarg);\
 		break;\
-	case 'D': rfile = strdup(optarg);\
+	case 't': rfile = strdup(optarg);\
 		break;\
 	case 'b': lfile = strdup(optarg);\
 		break;\
