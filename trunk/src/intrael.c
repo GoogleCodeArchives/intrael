@@ -897,7 +897,7 @@ int main(int argc, char **argv)
 	cbuf['g'] = 1;
 	cbuf['a'] = 32;
 	cbuf[0] = cc;
-	while ((c1 = getopt(argc, argv, "p:z:Z:x:X:y:Y:s:o:O:i:I:a:c:C:r:l:j:e:d:b:k:f:u:g:nhv")) != -1) {
+	while ((c1 = getopt(argc, argv, "p:z:Z:x:X:y:Y:s:o:O:i:I:a:c:C:r:l:j:e:d:b:k:f:u:g:t:nhv")) != -1) {
 		CSWITCH(c1,optarg);
 		RSWITCH(c1,optarg);
 		NSWITCH(c1);
@@ -960,7 +960,7 @@ int main(int argc, char **argv)
 		if((fp=fopen(rfile,"wb"))) {
 			fwrite(regbuf, sizeof(regbuf), 1, fp);
 			fclose(fp);
-		} else ERR("[ERR9] Could not write the registration information to the specified file",' ');
+		} else ERR("[ERR7] Could not write the registration information to the specified file",' ');
 	}
 	led=LED_OFF;
 	pthread_attr_init(&attr);
