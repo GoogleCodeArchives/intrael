@@ -694,7 +694,6 @@ typedef struct client_t {
 	uint32_t b,t,m,c;
 	SOCKET s;
 	frame_t *f;
-	LIST_ENTRY(client_t) all;
 	LIST_ENTRY(client_t) entries;
 	LIST_ENTRY(client_t) dentries;
 	LIST_ENTRY(client_t) ventries;
