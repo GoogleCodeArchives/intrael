@@ -839,7 +839,6 @@ int main(int argc, char **argv)
 	do {
 		cc++;
 	} while(!cc);
-	LIST_HEAD(, client_t) connected;
 	LIST_HEAD(, client_t) clients;
 	LIST_HEAD(, client_t) dclients;
 	LIST_HEAD(, client_t) vclients;
@@ -848,7 +847,6 @@ int main(int argc, char **argv)
 	LIST_HEAD(, host_t) hosts;
 	LIST_HEAD(, host_t) allhosts;
 	LIST_HEAD(, origin_t) origins;
-	LIST_INIT(&connected);
 	LIST_INIT(&clients);
 	LIST_INIT(&dclients);
 	LIST_INIT(&vclients);
@@ -1148,7 +1146,6 @@ int main(int argc, char **argv)
 					client->h=NULL;
 					tclient.entries.le_next = client->entries.le_next; 
 					LIST_REMOVE(client,entries);
-					LIST_REMOVE(client,all);
 					free(client);
 					client=&tclient;
 				}
@@ -1196,7 +1193,6 @@ int main(int argc, char **argv)
 							fdmax=MAX(newfd,fdmax);
 							FD_SET(newfd,&master);
 							LIST_INSERT_HEAD(&clients, client, entries);
-							LIST_INSERT_HEAD(&connected, client, all);
 						}
 					} else closesocket(newfd);
 				}
