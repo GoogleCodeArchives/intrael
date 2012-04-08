@@ -192,15 +192,24 @@ Intrael.prototype = {
 	},
 
 	_parse: function(data){
-		var blobs=[];
+		var blobs=[],joints=null;
 		var labels = ["center","left","right","top","bottom","near","far"];
-		for(var i=16,imax=data.length;i!=imax;i+=32){
+		var jlabels = ["rightelbow","leftelbow","rightshoulder","leftshoulder","righthand","lefthand","head"];
+		var i=16;
+		if(data[15]){
+			joints={};
+			while(data[i]<0){
+				joints[jlabels[8+data[i]]]={'x':data[i+1],'y':data[i+2],'z':data[i+3],'sx':data[i+4],'sy':data[i+5],'d':data[i+6]};
+				i+=7;
+			}
+		}
+		for(imax=data.length;i!=imax;i+=32){
 			var blob = {'px':data[i+28],'rs':data[i+29],'vr':data[i+30],'dt':data[i+31]};
 			for(var j=0,k=0;j != 28;j+= 4,k++){
 				blob[labels[k]] = {'x':data[i+j],'y':data[i+j+1],'z':data[i+j+2],'d':data[i+j+3]};	
 			}
 			blobs.push(blob);
 		}
-		return {'blobs':blobs,'header':{'stamp':data[0],'config':data[1],'mode':data[2],'left':data[3],'right':data[4],'top':data[5],'bottom':data[6],'near':data[7],'far':data[8],'minpx':data[9],'maxpx':data[10],'ax':data[11],'ay':data[12],'az':data[13],'angle':data[14],'motor':data[15]}};
+		return {'blobs':blobs,'header':{'stamp':data[0],'config':data[1],'mode':data[2],'left':data[3],'right':data[4],'top':data[5],'bottom':data[6],'near':data[7],'far':data[8],'minpx':data[9],'maxpx':data[10],'ax':data[11],'ay':data[12],'az':data[13],'angle':data[14],'skel':data[15]}};
 	}
 };
