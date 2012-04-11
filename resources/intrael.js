@@ -213,6 +213,6 @@ Intrael.prototype = {
 				blobs.push(blob);
 			}
 		}
-		return {'joints':joints,'blobs':blobs,'header':{'stamp':data[0],'config':data[1],'mode':data[2],'left':data[3],'right':data[4],'top':data[5],'bottom':data[6],'near':data[7],'far':data[8],'minpx':data[9],'maxpx':data[10],'ax':data[11],'ay':data[12],'az':data[13],'angle':data[14],'skel':data[15]}};
+		return {'joints':joints ? joints:0,'blobs':blobs,'header':{'stamp':data[0],'config':data[1],'mode':data[2],'left':data[3],'right':data[4],'top':data[5],'bottom':data[6],'near':data[7],'far':data[8],'minpx':data[9],'maxpx':data[10],'ax':data[11],'ay':data[12],'az':data[13],'angle':data[14],'skel':data[15]}};
 	}
 };
