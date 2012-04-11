@@ -198,7 +198,7 @@ Intrael.prototype = {
 		var imax=data.length;
 		if(imax != 16){
 			var i=16;
-			if(data[15]){
+			if(data[3]){
 				joints={};
 				while(data[i]<0){
 					joints[jlabels[7+data[i]]]={'x':data[i+1],'y':data[i+2],'z':data[i+3],'sx':data[i+4],'sy':data[i+5],'d':data[i+6]};
