@@ -207,7 +207,7 @@ Intrael.prototype = {
 				hasJoints=1;
 			}
 			if(hasJoints) blob.joints = joints; else delete joints;
-			for(;i!=imax;i+=32){
+			if(i!=imax){
 				blob.px=data[i+28];
 				blob.rs=data[i+29];
 				blob.vr=data[i+30];
