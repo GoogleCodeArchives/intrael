@@ -215,6 +215,7 @@ Intrael.prototype = {
 				for(var j=0,k=0;j != 28;j+= 4,k++){
 					blob[labels[k]] = {'x':data[i+j],'y':data[i+j+1],'z':data[i+j+2],'d':data[i+j+3]};	
 				}
+				i+=32;
 			}
 			blobs.push(blob);
 		}
