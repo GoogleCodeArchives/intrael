@@ -196,23 +196,28 @@ Intrael.prototype = {
 		var labels = ["center","left","right","top","bottom","near","far"];
 		var jlabels = ["rightelbow","leftelbow","rightshoulder","leftshoulder","righthand","lefthand","head"];
 		var imax=data.length;
-		if(imax != 16){
-			var i=16;
-			if(data[3]){
-				joints={};
-				while(data[i]<0){
-					joints[jlabels[7+data[i]]]={'x':data[i+1],'y':data[i+2],'z':data[i+3],'sx':data[i+4],'sy':data[i+5],'d':data[i+6]};
-					i+=7;
-				}
+		var i=16;
+		var hasJoints;
+		while(i!=imax){
+			var blob={},joints={};
+			hasJoints=0;
+			while(data[i]<0){
+				joints[jlabels[7+data[i]]]={'x':data[i+1],'y':data[i+2],'z':data[i+3],'sx':data[i+4],'sy':data[i+5],'d':data[i+6]};
+				i+=7;
+				hasJoints=1;
 			}
+			if(hasJoints) blob.joints = joints; else delete joints;
 			for(;i!=imax;i+=32){
-				var blob = {'px':data[i+28],'rs':data[i+29],'vr':data[i+30],'dt':data[i+31]};
+				blob.px=data[i+28];
+				blob.rs=data[i+29];
+				blob.vr=data[i+30];
+				blob.dt=data[i+31];
 				for(var j=0,k=0;j != 28;j+= 4,k++){
 					blob[labels[k]] = {'x':data[i+j],'y':data[i+j+1],'z':data[i+j+2],'d':data[i+j+3]};	
 				}
-				blobs.push(blob);
 			}
+			blobs.push(blob);
 		}
-		return {'joints':joints ? joints:0,'blobs':blobs,'header':{'stamp':data[0],'config':data[1],'mode':data[2],'left':data[3],'right':data[4],'top':data[5],'bottom':data[6],'near':data[7],'far':data[8],'minpx':data[9],'maxpx':data[10],'ax':data[11],'ay':data[12],'az':data[13],'angle':data[14],'skel':data[15]}};
+		return {'blobs':blobs,'header':{'time':data[0],'last':data[1],'ext':data[2],'skel':data[3],'left':data[4],'right':data[5],'top':data[6],'bottom':data[7],'near':data[8],'far':data[9],'min':data[10],'max':data[11],'ax':data[12],'ay':data[13],'az':data[14],'motor':data[15]}};
 	}
 };
