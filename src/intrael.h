@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #define XMD_H
 #include <jpeglib.h>
 #undef XMD_H
@@ -108,14 +107,14 @@ typedef int SOCKET;
 #endif
 #include <libfreenect.h>
 #include <libfreenect-registration.h>
+#include "skeltrack.h"
 #include "queue.h"
 #include "md5.h"
 
-#define MISSED 2
-#define MAX_BYTES 65400
-#define FRAME_PIXELS 307200
-#define MAX(x1,x2) ((x1) > (x2) ? (x1):(x2))
-#define MIN(x1,x2) ((x1) < (x2) ? (x1):(x2))
+#define MISSED 3
+#define MAX_BYTES 32000
+#define FRAME_PIXELS 76800
+#define G_VALUE_INIT {0,{{0}}}
 #define HASH(d)\
 	MD5_Init(md5);\
 	MD5_Update(md5,mbuf,sprintf((char *)mbuf,"%s%d",secret,d));\
@@ -123,40 +122,25 @@ typedef int SOCKET;
 	for(itmp = 0; itmp < 16; itmp++) sprintf(hash+2*itmp,"%02x",mtemp[itmp])
 #define IOPT(arg,var,min,max)\
 	itmp = atoi(arg);\
-	itmp = MIN(itmp,max);\
-	var = MAX(itmp,min);\
+	var = CLAMP(itmp,min,max);\
 	break
 #define COPT(ch,min,max,optarg)\
 	itmp=atoi(optarg);\
-	itmp = MIN(itmp,max);\
-	itmp = MAX(itmp,min);\
-	cbuf[(int)ch] = itmp;\
+	cbuf[(int)ch] = CLAMP(itmp,min,max);\
 	break
-#define ASSIGN()\
-	r0  = *(raw);\
-	r1  = *(raw+1);\
-	r2  = *(raw+2);\
-	r3  = *(raw+3);\
-	r4  = *(raw+4);\
-	r5  = *(raw+5);\
-	r6  = *(raw+6);\
-	r7  = *(raw+7);\
-	r8  = *(raw+8);\
-	r9  = *(raw+9);\
-	r10 = *(raw+10)
 #define PCK()\
-	frame[0] =  (r0<<3)  | (r1>>5);\
-	frame[1] = ((r1<<6)  | (r2>>2) )           & 2047;\
-	frame[2] = ((r2<<9)  | (r3<<1) | (r4>>7) ) & 2047;\
-	frame[3] = ((r4<<4)  | (r5>>4) )           & 2047;\
-	frame[4] = ((r5<<7)  | (r6>>1) )           & 2047;\
-	frame[5] = ((r6<<10) | (r7<<2) | (r8>>6) ) & 2047;\
-	frame[6] = ((r8<<5)  | (r9>>3) )           & 2047;\
-	frame[7] = ((r9<<8)  | (r10)   )           & 2047
+	frame[0] =  (raw[0]<<3)  | (raw[1]>>5);\
+	frame[1] = ((raw[2]<<9)  | (raw[3]<<1) | (raw[4]>>7) ) & 2047;\
+	frame[2] = ((raw[5]<<7)  | (raw[6]>>1) )           & 2047;\
+	frame[3] = ((raw[8]<<5)  | (raw[9]>>3) )           & 2047;\
+	frame[4] =  (raw[11]<<3)  | (raw[12]>>5);\
+	frame[5] = ((raw[13]<<9)  | (raw[14]<<1) | (raw[15]>>7) ) & 2047;\
+	frame[6] = ((raw[16]<<7)  | (raw[17]>>1) )           & 2047;\
+	frame[7] = ((raw[19]<<5)  | (raw[20]>>3) )           & 2047
 #if defined USE_SSE
 #define UNPACK()\
-	__m64 md = _mm_setr_pi16((r0<<3)  | (r1>>5), ((r1<<6)  | (r2>>2) ), ((r2<<9)  | (r3<<1) | (r4>>7) ), ((r4<<4)  | (r5>>4) ));\
-	__m64 mmd = _mm_setr_pi16(((r5<<7)  | (r6>>1) ),((r6<<10) | (r7<<2) | (r8>>6) ), ((r8<<5)  | (r9>>3) ), ((r9<<8)  | (r10)   ));\
+	__m64 md = _mm_setr_pi16((raw[0]<<3)  | (raw[1]>>5), ((raw[2]<<9)  | (raw[3]<<1) | (raw[4]>>7) ), ((raw[5]<<7)  | (raw[6]>>1) ), ((raw[8]<<5)  | (raw[9]>>3) ) );\
+	__m64 mmd = _mm_setr_pi16((raw[11]<<3)  | (raw[12]>>5),((raw[13]<<9)  | (raw[14]<<1) | (raw[15]>>7) ),((raw[16]<<7)  | (raw[17]>>1) ) , ((raw[19]<<5)  | (raw[20]>>3) ));\
 	md = _mm_and_si64(md, mmask);\
 	mmd = _mm_and_si64(mmd, mmask);\
 	__m64 mz = _mm_cmpgt_pi16(md, *((__m64 *) drz));\
@@ -172,8 +156,8 @@ typedef int SOCKET;
 	mZ = _mm_or_si64(mz, mmz);\
 	if(_mm_movemask_pi8(mZ)){
 #define ZUNPACK()\
-	__m64 md = _mm_setr_pi16((r0<<3)  | (r1>>5), ((r1<<6)  | (r2>>2) ), ((r2<<9)  | (r3<<1) | (r4>>7) ), ((r4<<4)  | (r5>>4) ));\
-	__m64 mmd = _mm_setr_pi16(((r5<<7)  | (r6>>1) ),((r6<<10) | (r7<<2) | (r8>>6) ), ((r8<<5)  | (r9>>3) ), ((r9<<8)  | (r10)   ));\
+	__m64 md = _mm_setr_pi16((raw[0]<<3)  | (raw[1]>>5), ((raw[2]<<9)  | (raw[3]<<1) | (raw[4]>>7) ), ((raw[5]<<7)  | (raw[6]>>1) ), ((raw[8]<<5)  | (raw[9]>>3) ) );\
+	__m64 mmd = _mm_setr_pi16((raw[11]<<3)  | (raw[12]>>5),((raw[13]<<9)  | (raw[14]<<1) | (raw[15]>>7) ),((raw[16]<<7)  | (raw[17]>>1) ) , ((raw[19]<<5)  | (raw[20]>>3) ));\
 	md = _mm_and_si64(md, mmask);\
 	mmd = _mm_and_si64(mmd, mmask);\
 	__m64 mz = _mm_cmpgt_pi16(md, rmz);\
@@ -198,7 +182,7 @@ typedef int SOCKET;
 #define UNPACK()\
 	__m128i mz = _mm_load_si128((__m128i *) drz);\
 	__m128i mZ = _mm_load_si128((__m128i *) drZ);\
-	__m128i md = _mm_setr_epi16((r0<<3)  | (r1>>5), ((r1<<6)  | (r2>>2) ), ((r2<<9)  | (r3<<1) | (r4>>7) ), ((r4<<4)  | (r5>>4) ), ((r5<<7)  | (r6>>1) ),((r6<<10) | (r7<<2) | (r8>>6) ), ((r8<<5)  | (r9>>3) ), ((r9<<8)  | (r10)   ));\
+	__m128i md = _mm_setr_epi16((raw[0]<<3)  | (raw[1]>>5), ((raw[2]<<9)  | (raw[3]<<1) | (raw[4]>>7) ), ((raw[5]<<7)  | (raw[6]>>1) ), ((raw[8]<<5)  | (raw[9]>>3) ),(raw[11]<<3)  | (raw[12]>>5),((raw[13]<<9)  | (raw[14]<<1) | (raw[15]>>7) ),((raw[16]<<7)  | (raw[17]>>1) ) , ((raw[19]<<5)  | (raw[20]>>3) ));\
 	md = _mm_and_si128(md, mmask);\
 	mz = _mm_cmpgt_epi16(md, mz);\
 	mZ = _mm_cmpgt_epi16(mZ, md);\
@@ -207,7 +191,7 @@ typedef int SOCKET;
 	_mm_store_si128((__m128i *) frame,md);\
 	if(_mm_movemask_epi8(mz)){
 #define ZUNPACK()\
-	__m128i md = _mm_setr_epi16((r0<<3)  | (r1>>5), ((r1<<6)  | (r2>>2) ), ((r2<<9)  | (r3<<1) | (r4>>7) ), ((r4<<4)  | (r5>>4) ), ((r5<<7)  | (r6>>1) ),((r6<<10) | (r7<<2) | (r8>>6) ), ((r8<<5)  | (r9>>3) ), ((r9<<8)  | (r10)   ));\
+	__m128i md = _mm_setr_epi16((raw[0]<<3)  | (raw[1]>>5), ((raw[2]<<9)  | (raw[3]<<1) | (raw[4]>>7) ), ((raw[5]<<7)  | (raw[6]>>1) ), ((raw[8]<<5)  | (raw[9]>>3) ),(raw[11]<<3)  | (raw[12]>>5),((raw[13]<<9)  | (raw[14]<<1) | (raw[15]>>7) ),((raw[16]<<7)  | (raw[17]>>1) ) , ((raw[19]<<5)  | (raw[20]>>3) ));\
 	md = _mm_and_si128(md, mmask);\
 	__m128i mz = _mm_cmpgt_epi16(md, rmz);\
 	__m128i mZ = _mm_cmpgt_epi16(rmZ, md);\
@@ -224,10 +208,10 @@ typedef int SOCKET;
 	uint32x4_t md32;\
 	uint16x8_t mz = vld1q_u16(drz);\
 	uint16x8_t mZ = vld1q_u16(drz);\
-	md32 = vsetq_lane_u32(((r1<<6)  | (r2>>2) ) << 16 | ((r0<<3)  | (r1>>5)),md32,0);\
-	md32 = vsetq_lane_u32(((r4<<4)  | (r5>>4) ) << 16 | ((r2<<9)  | (r3<<1) | (r4>>7) ),md32,1);\
-	md32 = vsetq_lane_u32(((r6<<10) | (r7<<2) | (r8>>6) ) << 16 | ((r5<<7)  | (r6>>1) ),md32,2);\
-	md32 = vsetq_lane_u32(((r9<<8)  | (r10)   )<<16 | ((r8<<5)  | (r9>>3) ),md32,3);\
+	md32 = vsetq_lane_u32((((raw[2]<<9)  | (raw[3]<<1) | (raw[4]>>7) )) << 16 | ((raw[0]<<3)  | (raw[1]>>5)),md32,0);\
+	md32 = vsetq_lane_u32((((raw[8]<<5)  | (raw[9]>>3) ) ) << 16 | (((raw[5]<<7)  | (raw[6]>>1) ) ),md32,1);\
+	md32 = vsetq_lane_u32(((raw[13]<<9)  | (raw[14]<<1) | (raw[15]>>7) ) << 16 | ((raw[11]<<3)  | (raw[12]>>5)),md32,2);\
+	md32 = vsetq_lane_u32(((raw[19]<<5)  | (raw[20]>>3) )<<16 | (((raw[16]<<7)  | (raw[17]>>1) )),md32,3);\
 	uint16x8_t md = vreinterpretq_u16_u32(md32);\
 	md = vandq_u16(md, mmask);\
 	mz = vcgtq_u16(md,mz);\
@@ -241,10 +225,10 @@ typedef int SOCKET;
 	if(vget_lane_u32(mmm,0)){
 #define ZUNPACK()\
 	uint32x4_t md32;\
-	md32 = vsetq_lane_u32(((r1<<6)  | (r2>>2) ) << 16 | ((r0<<3)  | (r1>>5)),md32,0);\
-	md32 = vsetq_lane_u32(((r4<<4)  | (r5>>4) ) << 16 | ((r2<<9)  | (r3<<1) | (r4>>7) ),md32,1);\
-	md32 = vsetq_lane_u32(((r6<<10) | (r7<<2) | (r8>>6) ) << 16 | ((r5<<7)  | (r6>>1) ),md32,2);\
-	md32 = vsetq_lane_u32(((r9<<8)  | (r10)   )<<16 | ((r8<<5)  | (r9>>3) ),md32,3);\
+	md32 = vsetq_lane_u32((((raw[2]<<9)  | (raw[3]<<1) | (raw[4]>>7) )) << 16 | ((raw[0]<<3)  | (raw[1]>>5)),md32,0);\
+	md32 = vsetq_lane_u32((((raw[8]<<5)  | (raw[9]>>3) ) ) << 16 | (((raw[5]<<7)  | (raw[6]>>1) ) ),md32,1);\
+	md32 = vsetq_lane_u32(((raw[13]<<9)  | (raw[14]<<1) | (raw[15]>>7) ) << 16 | ((raw[11]<<3)  | (raw[12]>>5)),md32,2);\
+	md32 = vsetq_lane_u32(((raw[19]<<5)  | (raw[20]>>3) )<<16 | (((raw[16]<<7)  | (raw[17]>>1) )),md32,3);\
 	uint16x8_t md = vreinterpretq_u16_u32(md32);\
 	md = vandq_u16(md, mmask);\
 	uint16x8_t mz = vcgtq_u16(md,rmz);\
@@ -339,7 +323,7 @@ typedef int SOCKET;
 #define IF_NEXT()\
 	}else if(running){ EPROC(0); }\
 	i+=8;\
-	   if(i != t_X)
+	if(i != t_X)
 #else
 #define IF_NEXT()\
 	i+=8;\
@@ -354,8 +338,8 @@ typedef int SOCKET;
 				for(ni=run_s[re];i!=ni;i++) dref[i]=0;\
 				for(ni=run_e[re];i!=ni;i++) dref[i]=depth_to_mm[depth[i]];\
 			}\
-			for(ni=t_X;i!=640;i++) dref[i]=0;\
-			dref += 640;\
+			for(ni=t_X;i!=320;i++) dref[i]=0;\
+			dref += 320;\
 		}\
 		if(encode){\
 			for(i=t_x;rt!=n;rt++){\
@@ -368,16 +352,15 @@ typedef int SOCKET;
 		rt=0;\
 	}else{\
 		if(dmap){\
-			memset(dref,0,1280);\
-			dref += 640;\
+			memset(dref,0,640);\
+			dref += 320;\
 		}\
 		if(encode) jpeg_write_scanlines(&ginfo,&jblack, TRUE);\
 	}\
 	re = n;\
-	y++;\
-	if(y == t_Y) break;\
+	if(++y == t_Y) break;\
 	i=t_x;\
-	raw = draw + (((int)((640*y+i)/8)) * 11);\
+	raw = draw + (((int)((640*y+i)/4)) * 11);\
 	frame=depth+i
 #define FOP(file)\
 	if(!file) break;\
@@ -413,7 +396,7 @@ typedef int SOCKET;
 	case 'n': video = 0;\
 		break;\
 	case 'j': IOPT(optarg,quality,0,75);\
-	case 's': if(strlen(optarg)==1 && optarg[0]=='0'){sec=0; break;}\
+	case 'q': if(strlen(optarg)==1 && optarg[0]=='0'){sec=0; break;}\
 		secret = strdup(optarg);\
 		mbuf = (unsigned char *) malloc(strlen(secret)+16);\
 		break;\
@@ -421,7 +404,7 @@ typedef int SOCKET;
 	case 'f': IOPT(optarg,frmax,3,1000);\
 	case 'd': sfile = strdup(optarg);\
 		break;\
-	case 't': rfile = strdup(optarg);\
+	case 't': IOPT(optarg,coffset,0,9999);\
 		break;\
 	case 'b': lfile = strdup(optarg);\
 		break;\
@@ -439,25 +422,26 @@ typedef int SOCKET;
 #define RSWITCH(ch,optarg)\
 	switch (ch) {\
 	case 'g': COPT(ch,0,1,optarg);\
-	case 'x': COPT(ch,0,631,optarg);\
-	case 'X': COPT(ch,0,632,optarg);\
-	case 'y': COPT(ch,0,479,optarg);\
-	case 'Y': COPT(ch,0,480,optarg);\
+	case 'x': COPT(ch,0,320,optarg);\
+	case 'X': COPT(ch,0,320,optarg);\
+	case 'y': COPT(ch,0,240,optarg);\
+	case 'Y': COPT(ch,0,240,optarg);\
 	case 'z': COPT(ch,1,9999,optarg);\
 	case 'Z': COPT(ch,1,9999,optarg);\
 	case 'c': COPT(ch,1,FRAME_PIXELS,optarg);\
 	case 'C': COPT(ch,0,FRAME_PIXELS,optarg);\
 	case 'e': COPT(ch,-999,999,optarg);\
 	case 'a': COPT(ch,-31,31,optarg);\
+	case 's': COPT(ch,-99,99,optarg);\
 	case 'r': COPT(ch,1,999,optarg);\
-	case 'b': if(lfile){ cbuf['b'] = 1;}\
-		break;\
-	case 'd': if(sfile){ cbuf['d'] = 1;}\
-		break;\
-	case 'o': if(ofile){ cbuf['o'] = 1;}\
-		break;\
-	case 'i': if(ifile){ cbuf['i'] = 1;}\
-		break;\
+	case 'b': if(!lfile) break;\
+			  COPT(ch,-1,1,optarg);\
+	case 'd': if(!sfile) break;\
+			  COPT(ch,-1,1,optarg);\
+	case 'o': if(!ofile) break;\
+			  COPT(ch,0,1,optarg);\
+	case 'i': if(!ifile) break;\
+			  COPT(ch,0,1,optarg);\
 	}
 #define NSWITCH(ch)\
 	switch(ch){\
@@ -570,6 +554,7 @@ typedef int SOCKET;
 				frame->c++;\
 				client->c=0;\
 				client->t=frame->t;\
+				client->n=count+coffset;\
 				FD_SET(client->s,&streaming);\
 				FD_SET(client->s,&master);\
 				fdmax=MAX(client->s,fdmax);\
@@ -580,9 +565,9 @@ typedef int SOCKET;
 		miss=0;\
 	}
 #define DFRAME()\
-	pthread_mutex_lock(&net_mutex);\
+	g_mutex_lock(net_mutex);\
 	client->f->d++;\
-	pthread_mutex_unlock(&net_mutex);\
+	g_mutex_unlock(net_mutex);\
 	client->f = NULL
 #define STREAM(cls,entry,mod,off)\
 	if(client->m){\
@@ -632,13 +617,39 @@ typedef int SOCKET;
 	inf.err = jpeg_std_error(&jerr);\
 	jpeg_create_compress(&inf);\
 	jpeg_memory_dest(&inf);\
-	inf.image_width=640;\
-	inf.image_height=480;\
+	inf.image_width=320;\
+	inf.image_height=240;\
 	inf.dct_method=JDCT_FASTEST;\
 	inf.input_components = comp;\
 	inf.in_color_space   = space;\
 	jpeg_set_defaults(&inf);\
 	jpeg_set_quality(&inf,quality,TRUE)
+#define BOUNDSET(bx,bX,by,bY)\
+	g_value_set_int (&dval,bx);\
+	g_object_set_property (G_OBJECT (skeleton), "bound-left", &dval);\
+	g_value_set_int (&dval,bX);\
+	g_object_set_property (G_OBJECT (skeleton), "bound-right", &dval);\
+	g_value_set_int (&dval,by);\
+	g_object_set_property (G_OBJECT (skeleton), "bound-top", &dval);\
+	g_value_set_int (&dval,bY);\
+	g_object_set_property (G_OBJECT (skeleton), "bound-bottom", &dval)\
+	
+#define SKEL()\
+	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_HEAD)))\
+		len+=sprintf(dframe->buf+len,",-1,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_LEFT_HAND)))\
+		len+=sprintf(dframe->buf+len,",-2,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_RIGHT_HAND)))\
+		len+=sprintf(dframe->buf+len,",-3,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_LEFT_SHOULDER)))\
+		len+=sprintf(dframe->buf+len,",-4,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_RIGHT_SHOULDER)))\
+		len+=sprintf(dframe->buf+len,",-5,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_LEFT_ELBOW)))\
+		len+=sprintf(dframe->buf+len,",-6,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_RIGHT_ELBOW)))\
+		len+=sprintf(dframe->buf+len,",-7,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+	skeltrack_joint_list_free(list)
 #define MSTATE()\
 	freenect_update_tilt_state(f_dev);\
 	state = freenect_get_tilt_state(f_dev);\
@@ -654,11 +665,15 @@ typedef int SOCKET;
 #define STR_JPEG_M "HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nConnection: Close\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-type: multipart/x-mixed-replace; boundary=INTRAEL\r\n\r\n--INTRAEL\r\n"
 #define STR_JPEG_S "HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nConnection: close\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\n"
 #define STR_JPEG "Content-Type: image/jpeg\r\nContent-Length: %7d\r\n\r\n"
-#define STR_DUMP "HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/octet-stream\r\nContent-Length: 614400\r\n\r\n"
+#define STR_DUMP "HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/octet-stream\r\nContent-Length: 153600\r\n\r\n"
+#define STR_BMP "HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/octet-stream\r\nContent-Length: 230400\r\n\r\n"
+#define STR_REG "HTTP/1.1 200 OK\r\nServer: Intrael %d.%d\r\nCache-Control: no-cache,  no-store\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: application/octet-stream\r\nContent-Length: 317200\r\n\r\n"
 #define STR_404 "HTTP/1.1 404 Not Found\r\nServer: Intrael %d.%d\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html\r\nContent-Length: 91\r\n\r\n"
 #define STR_404B "<html><head><title>Intrael - Not Found</title></head><body><h1>Not Found</h1></body></html>"
 #define STR_403 "HTTP/1.1 403 Forbidden\r\nServer: Intrael %d.%d\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html\r\nContent-Length: 91\r\n\r\n"
 #define STR_403B "<html><head><title>Intrael - Forbidden</title></head><body><h1>Forbidden</h1></body></html>"
+#define STR_503 "HTTP/1.1 503 Service Unavailable\r\nServer: Intrael %d.%d\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html\r\nContent-Length: 111\r\n\r\n"
+#define STR_503B "<html><head><title>Intrael - Service Unavailable</title></head><body><h1>Service Unavailable</h1></body></html>"
 
 typedef struct header_t {
 	uint32_t sl,ml,t,c;
@@ -673,6 +688,7 @@ typedef struct frame_t {
 	LIST_ENTRY(frame_t) gentries;
 	LIST_ENTRY(frame_t) ventries;
 	LIST_ENTRY(frame_t) rentries;
+	LIST_ENTRY(frame_t) bentries;	
 } frame_t;
 
 typedef struct origin_t {
@@ -691,7 +707,7 @@ typedef struct host_t {
 typedef struct client_t {
 	in_addr_t a;
 	host_t *h;
-	uint32_t b,t,m,c;
+	uint32_t b,t,m,c,n;
 	SOCKET s;
 	frame_t *f;
 	LIST_ENTRY(client_t) entries;
@@ -699,6 +715,7 @@ typedef struct client_t {
 	LIST_ENTRY(client_t) ventries;
 	LIST_ENTRY(client_t) gentries;
 	LIST_ENTRY(client_t) rentries;
+	LIST_ENTRY(client_t) bentries;	
 } client_t;
 
 typedef struct {
@@ -712,42 +729,41 @@ typedef struct {
 typedef memory_destination_mgr* mem_dest_ptr;
 
 #ifdef _MSC_VER
-__declspec(align(16)) uint16_t depth[640];
+__declspec(align(16)) uint16_t depth[320];
 __declspec(align(16)) uint16_t depth_ref_Z[FRAME_PIXELS];
 __declspec(align(16)) uint16_t depth_ref_z[FRAME_PIXELS];
-__declspec(align(16)) uint8_t depth_raw[3][640*480*11/8];
-__declspec(align(16)) uint8_t video_raw[3][640*480];
-__declspec(align(16)) uint8_t rgb[640*3];
-__declspec(align(16)) uint8_t black[640];
-__declspec(align(16)) uint8_t gray[640];
+__declspec(align(16)) uint8_t depth_raw[3][4*FRAME_PIXELS*11/8];
+__declspec(align(16)) uint8_t video_raw[3][4*FRAME_PIXELS];
+__declspec(align(16)) uint8_t rgb[320*3];
+__declspec(align(16)) uint8_t black[320];
+__declspec(align(16)) uint8_t gray[320];
 #else
-uint16_t depth[640] __attribute__ ((aligned (16)));
+uint16_t depth[320] __attribute__ ((aligned (16)));
 uint16_t depth_ref_z[FRAME_PIXELS] __attribute__ ((aligned (16)));
 uint16_t depth_ref_Z[FRAME_PIXELS] __attribute__ ((aligned (16)));
-uint8_t depth_raw[3][640*480*11/8] __attribute__ ((aligned (16)));
-uint8_t video_raw[3][640*480] __attribute__ ((aligned (16)));
-uint8_t rgb[640*3] __attribute__ ((aligned (16)));
-uint8_t black[640] __attribute__ ((aligned (16)));
-uint8_t gray[640] __attribute__ ((aligned (16)));
+uint8_t depth_raw[3][4*FRAME_PIXELS*11/8] __attribute__ ((aligned (16)));
+uint8_t video_raw[3][4*FRAME_PIXELS] __attribute__ ((aligned (16)));
+uint8_t rgb[320*3] __attribute__ ((aligned (16)));
+uint8_t black[320] __attribute__ ((aligned (16)));
+uint8_t gray[320] __attribute__ ((aligned (16)));
 #endif
 
-pthread_mutex_t depth_mutex  = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t  depth_cond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t video_mutex  = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t  video_cond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t net_mutex  = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t conf_mutex  = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t count_mutex  = PTHREAD_MUTEX_INITIALIZER;
-pthread_attr_t attr;
-pthread_t dthread;
-pthread_t vthread;
+static GMutex *depth_mutex = NULL;
+static GMutex *video_mutex = NULL;
+static GMutex *net_mutex = NULL;
+static GMutex *conf_mutex = NULL;
+static GMutex *dev_mutex = NULL;
 
+GCond* depth_cond = NULL;
+GCond* video_cond = NULL;
+
+static SkeltrackSkeleton *skeleton = NULL;
 char *lfile,*sfile,*ofile,*ifile,*rfile;
 int32_t regbuf[FRAME_PIXELS*2+10000];
-frame_t *ndframe,*ngframe,*nvframe,*nrframe;
-uint8_t dwait,vwait,dmiss,gmiss,vmiss,rmiss,depth_to_gray[2048],quality;
-uint16_t depth_ref[FRAME_PIXELS],depth_to_raw[10000],depth_to_mm[2048],run_y[FRAME_PIXELS/2+1],run_zv[FRAME_PIXELS/2+1],run_Zv[FRAME_PIXELS/2+1],run_sv[FRAME_PIXELS/2+1],run_ev[FRAME_PIXELS/2+1],run_s[FRAME_PIXELS/2+1],run_e[FRAME_PIXELS/2+1],run_z[FRAME_PIXELS/2+1],run_Z[FRAME_PIXELS/2+1];
-uint32_t r_label[FRAME_PIXELS/2+1],run_sum[FRAME_PIXELS/2+1],run_label[FRAME_PIXELS/2+1],l_pos_x[FRAME_PIXELS/2+1],l_pos_X[FRAME_PIXELS/2+1],l_pos_y[FRAME_PIXELS/2+1],l_pos_Y[FRAME_PIXELS/2+1],l_pos_z[FRAME_PIXELS/2+1],l_pos_Z[FRAME_PIXELS/2+1],l_cx[FRAME_PIXELS/2+1],l_cy[FRAME_PIXELS/2+1],l_sum[FRAME_PIXELS/2+1],l_count[FRAME_PIXELS/2+1],l_runs[FRAME_PIXELS/2+1],l_vrun[FRAME_PIXELS/2+1],l_checked[FRAME_PIXELS/2+1],dstamp,vstamp,dcb,vcb,led;
-int32_t gbuf[128],umax,frmax;
+frame_t *ndframe,*ngframe,*nvframe,*nrframe,*nbframe;
+uint8_t dwait,vwait,depth_to_gray[2048],quality,run_y[FRAME_PIXELS/2+1];
+uint16_t depth_ref[FRAME_PIXELS],depth_to_raw[10000],depth_to_mm[2048],run_zv[FRAME_PIXELS/2+1],run_Zv[FRAME_PIXELS/2+1],run_sv[FRAME_PIXELS/2+1],run_ev[FRAME_PIXELS/2+1],run_s[FRAME_PIXELS/2+1],run_e[FRAME_PIXELS/2+1],run_z[FRAME_PIXELS/2+1],run_Z[FRAME_PIXELS/2+1],sbuf[1200],run_label[FRAME_PIXELS/2+1],r_label[FRAME_PIXELS/2+1],l_checked[FRAME_PIXELS/2+1],l_runs[FRAME_PIXELS/2+1],l_pos_x[FRAME_PIXELS/2+1],l_pos_X[FRAME_PIXELS/2+1],l_pos_y[FRAME_PIXELS/2+1],l_pos_Y[FRAME_PIXELS/2+1],l_pos_z[FRAME_PIXELS/2+1],l_pos_Z[FRAME_PIXELS/2+1];
+uint32_t run_sum[FRAME_PIXELS/2+1],l_cx[FRAME_PIXELS/2+1],l_cy[FRAME_PIXELS/2+1],l_sum[FRAME_PIXELS/2+1],l_count[FRAME_PIXELS/2+1],l_vrun[FRAME_PIXELS/2+1],dstamp,vstamp,dcb,vcb,led,dmiss,gmiss,vmiss,rmiss,bmiss,gcount;
+int32_t gbuf[128],umax,frmax,active;
 freenect_context *f_ctx;
-freenect_device *f_dev;
+freenect_device *f_dev=NULL;
