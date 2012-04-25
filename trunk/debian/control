@@ -11,4 +11,4 @@ Package: intrael
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends} , libjpeg62, libfreenect
 Recommends: libjpeg-turbo
-Description:  Intrael server - HTTP interface for the MS Kinect - binary
+Description:  Intrael - HTTP blob tracking server using a MS Kinect - binary

@@ -42,7 +42,6 @@ set (PROJECT_VER
 OPTION(COMPILE_SSE "Use x86 SSE instruction set" OFF)
 OPTION(COMPILE_SSE2 "Use x86 SSE2 instruction set" ON)
 OPTION(COMPILE_NEON "Use Arm NEON instruction set" OFF)
-OPTION(COMPILE_STATIC "Do a staticallly linked build" OFF)
 
 
 ######################################################################################
@@ -59,9 +58,12 @@ include (SetupDirectories)
 # Find packages needed to build library
 find_package(libfreenect REQUIRED)
 find_package(libjpeg REQUIRED)
-IF ( COMPILE_STATIC )
-find_package(libusb-1.0 REQUIRED)
-ENDIF(COMPILE_STATIC)
+find_package(GLIB2 REQUIRED)
+find_package(GTHREAD2 REQUIRED)
+find_package(GOBJECT2 REQUIRED)
+find_package(GIO REQUIRED)
+#find_package(GMODULE2 REQUIRED)
+
 ######################################################################################
 # CMake 
 ######################################################################################
@@ -70,11 +72,11 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 SET(DOC_OUTPUT_PATH ${CMAKE_BINARY_DIR}/doc)
 
 if(CMAKE_C_FLAGS STREQUAL "")
-  set(CMAKE_C_FLAGS "-O3")
+  set(CMAKE_C_FLAGS "-O3 -g")
 endif()
-if(APPLE)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -arch i386 -arch x86_64 -Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation")
-endif(APPLE)
+#if(APPLE)
+#	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -arch i386 -arch x86_64 -Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation")
+#endif(APPLE)
 add_definitions(-Wall)
 
 IF ( COMPILE_SSE )

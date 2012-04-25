@@ -1,7 +1,7 @@
 === 2.0 RC1 ===
 
 	New features:
-		- Shifting tables for Depth->RGB provided through /4x uri
+		- Shifting tables for Depth->RGB are provided(-t option)
 		- Raw frames(600k each) provided as binary files via /3x
 		- Max number of connections per IP supported through -m
 		- Can limit a single IP and/or origin for config requests
@@ -11,7 +11,7 @@
 		- New multithreaded arch allowing full and multi cpu utilization
 		- Optimised algorithm with nice speedup especially for non-SIMD
 		- Can request polling or streaming directly. No need to restart.
-		- The depth jpeg generation was polished and optimised as well.
+		- The depth camera jpeg generation was polished and optimised.
 		
 
 === 1.1 ===
