@@ -632,23 +632,22 @@ typedef int SOCKET;
 	g_value_set_int (&dval,by);\
 	g_object_set_property (G_OBJECT (skeleton), "bound-top", &dval);\
 	g_value_set_int (&dval,bY);\
-	g_object_set_property (G_OBJECT (skeleton), "bound-bottom", &dval)\
-	
+	g_object_set_property (G_OBJECT (skeleton), "bound-bottom", &dval)	
 #define SKEL()\
 	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_HEAD)))\
-		len+=sprintf(dframe->buf+len,",-1,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+		len+=sprintf(dframe->buf+len,",-1,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
 	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_LEFT_HAND)))\
-		len+=sprintf(dframe->buf+len,",-2,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+		len+=sprintf(dframe->buf+len,",-2,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
 	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_RIGHT_HAND)))\
-		len+=sprintf(dframe->buf+len,",-3,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+		len+=sprintf(dframe->buf+len,",-3,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
 	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_LEFT_SHOULDER)))\
-		len+=sprintf(dframe->buf+len,",-4,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+		len+=sprintf(dframe->buf+len,",-4,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
 	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_RIGHT_SHOULDER)))\
-		len+=sprintf(dframe->buf+len,",-5,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+		len+=sprintf(dframe->buf+len,",-5,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
 	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_LEFT_ELBOW)))\
-		len+=sprintf(dframe->buf+len,",-6,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+		len+=sprintf(dframe->buf+len,",-6,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
 	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_RIGHT_ELBOW)))\
-		len+=sprintf(dframe->buf+len,",-7,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*640]);\
+		len+=sprintf(dframe->buf+len,",-7,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
 	skeltrack_joint_list_free(list)
 #define MSTATE()\
 	freenect_update_tilt_state(f_dev);\

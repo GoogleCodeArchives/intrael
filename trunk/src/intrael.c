@@ -330,7 +330,7 @@ void *depth_thread()
 				if(framefix) {
 					for(y=0; y!=240; y++) {
 						dref=depth_ref+(320*y);
-						for(x=0,i=1; i!=320; i++) {
+						for(x=0,i=1; i!=316; i++) {
 							da=depth_ref[i];
 							if(x) {
 								if(da) {
