@@ -1271,10 +1271,9 @@ dijkstra_to (GList *nodes, Node *source, Node *target,
           Node *neighbor;
 
           neighbor = (Node *) current_neighbor->data;
-          dist = get_distance_square (node, neighbor) +
+          dist = get_distance(node, neighbor) +
             distances[node->j * width + node->i];
-
-          if (distances[neighbor->j * width + neighbor->i] == -1 ||
+		  if (distances[neighbor->j * width + neighbor->i] == -1 ||
               dist < distances[neighbor->j * width + neighbor->i])
             {
               distances[neighbor->j * width + neighbor->i] = dist;
@@ -1462,7 +1461,7 @@ static void
 identify_arm_extrema (gint *distances,
                       Node **previous_nodes,
                       gint width,
-                      gint32 hand_distance,
+                      gint16 hand_distance,
                       Node *extrema,
                       Node **elbow_extrema,
                       Node **hand_extrema)
@@ -1484,7 +1483,7 @@ identify_arm_extrema (gint *distances,
       gint elbow_dist;
 
       previous = previous_nodes[extrema->j * width + extrema->i];
-      elbow_dist = total_dist / 4;
+      elbow_dist = total_dist / 2;
       while (previous &&
              distances[previous->j * width + previous->i] > elbow_dist)
         {
@@ -1659,7 +1658,7 @@ set_left_and_right_from_extremas (SkeltrackSkeleton *self,
   identify_arm_extrema (distances_left,
                         previous_left,
                         width,
-                        self->priv->hands_minimum_distance_square,
+                        self->priv->hands_minimum_distance,
                         left,
                         &elbow_extrema,
                         &hand_extrema);
@@ -1677,7 +1676,7 @@ set_left_and_right_from_extremas (SkeltrackSkeleton *self,
   identify_arm_extrema (distances_right,
                         previous_right,
                         width,
-                        self->priv->hands_minimum_distance_square,
+                        self->priv->hands_minimum_distance,
                         right,
                         &elbow_extrema,
                         &hand_extrema);
