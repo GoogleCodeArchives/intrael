@@ -319,7 +319,7 @@ void *depth_thread()
 					}
 				}
 			}
-			refcount = refcount == -1 ? 0: refcount-1;
+			refcount = (refcount == -1) ? 0: refcount-1;
 			if(refcount) {
 				g_mutex_lock(depth_mutex);
 				dcb++;
@@ -328,6 +328,7 @@ void *depth_thread()
 				continue;
 			} else {
 				if(framefix) {
+					framefix=0;
 					for(y=0; y!=240; y++) {
 						dref=depth_ref+(320*y);
 						for(x=0,i=1; i!=316; i++) {
@@ -361,7 +362,7 @@ void *depth_thread()
 							if(ni > 0) {
 								da = depth_to_raw[ni];
 								dzv = depth_to_raw[dref[i]];
-								if(dz > x) {
+								if(dzv > x) {
 									drz[i] = (da > dzv-x) ? dzv-x : da;
 								} else {
 									drz[i] = 2048;
@@ -391,11 +392,10 @@ void *depth_thread()
 						drz=depth_ref_z+(320*y);
 						drZ=depth_ref_Z+(320*y);
 						for(i=0; i!=316; i++) {
-							ni=dref[i]-mode;
+							ni=depth_to_raw[dref[i]]-mode;
 							if(ni > 0) {
-								itmp=depth_to_raw[ni];
-								drz[i] = t_z < ni ? itmp:rawz;
-								drZ[i] = t_Z < ni ? itmp:rawZ;
+								drz[i] =  ni > rawz ? ni:rawz;
+								drZ[i] =  ni > rawZ ? ni:rawZ;
 							} else {
 								drz[i] = 2048;
 								drZ[i] = 0;
@@ -629,6 +629,8 @@ void *depth_thread()
 					uint16x8_t rmz=vdupq_n_u16(rawz);
 					uint16x8_t rmZ=vdupq_n_u16(rawZ);
 					#endif
+					rawz=depth_to_raw[t_z];
+					rawZ=depth_to_raw[t_Z];
 					while(1){
 						ZUNPACK();
 						IF_NEXT(){
@@ -670,47 +672,47 @@ void *depth_thread()
 				rframe->l=153600;
 				rframe->t=dstamp;
 			}
-			ni=0;
-			while(--n) {
-				label = r_label[r_label[run_label[n]]];
-				rs=run_s[n];
-				re=run_e[n];
-				y=run_y[n];
-				l=re-rs;
-				if(l_count[label]) {
-					dzv=run_zv[n];
-					dZv=run_Zv[n];
-					if(rs < run_s[l_pos_x[label]]) l_pos_x[label] = n;
-					if(re > run_e[l_pos_X[label]]) l_pos_X[label] = n;
-					if(dzv < run_zv[l_pos_z[label]]) l_pos_z[label] = n;
-					if(dZv > run_Zv[l_pos_Z[label]]) l_pos_Z[label] = n;
-					l_count[label] += l;
-					l_pos_y[label] = n;
-					l_cx[label]+=((l*(rs+re)));
-					l_vrun[label] += y;
-					l_cy[label]+= l*y;
-					l_sum[label] += run_sum[n];
-					l_runs[label]++;
-				} else {
-					l_pos_z[label] = n;
-					l_pos_Z[label] = n;
-					l_pos_x[label] = n;
-					l_pos_X[label] = n;
-					l_pos_y[label] = n;
-					l_pos_Y[label] = n;
-					l_count[label] = l;
-					l_cx[label]=((l*(rs+re)));
-					l_vrun[label] = y;
-					l_cy[label]=l*y;
-					l_sum[label] = run_sum[n];
-					l_runs[label] = 1;
-					l_checked[ni++]=label;
-				}
-			}
-			#if defined USE_SSE
-			_mm_empty();
-			#endif
 			if(json){
+				ni=0;
+				while(--n) {
+					label = r_label[r_label[run_label[n]]];
+					rs=run_s[n];
+					re=run_e[n];
+					y=run_y[n];
+					l=re-rs;
+					if(l_count[label]) {
+						dzv=run_zv[n];
+						dZv=run_Zv[n];
+						if(rs < run_s[l_pos_x[label]]) l_pos_x[label] = n;
+						if(re > run_e[l_pos_X[label]]) l_pos_X[label] = n;
+						if(dzv < run_zv[l_pos_z[label]]) l_pos_z[label] = n;
+						if(dZv > run_Zv[l_pos_Z[label]]) l_pos_Z[label] = n;
+						l_count[label] += l;
+						l_pos_y[label] = n;
+						l_cx[label]+=((l*(rs+re)));
+						l_vrun[label] += y;
+						l_cy[label]+= l*y;
+						l_sum[label] += run_sum[n];
+						l_runs[label]++;
+					} else {
+						l_pos_z[label] = n;
+						l_pos_Z[label] = n;
+						l_pos_x[label] = n;
+						l_pos_X[label] = n;
+						l_pos_y[label] = n;
+						l_pos_Y[label] = n;
+						l_count[label] = l;
+						l_cx[label]=((l*(rs+re)));
+						l_vrun[label] = y;
+						l_cy[label]=l*y;
+						l_sum[label] = run_sum[n];
+						l_runs[label] = 1;
+						l_checked[ni++]=label;
+					}
+				}
+				#if defined USE_SSE
+				_mm_empty();
+				#endif
 				if(t_g) {
 					g_mutex_lock(dev_mutex);
 					if(f_dev){
@@ -1233,15 +1235,15 @@ int main(int argc, char **argv)
 								break;
 							case '3':
 								if(umax) {FCHK(rclients,rentries);} else {FRAME40(frame404);}
-								c2=0;
+								c2 = 0;
 								break;
 							case '4':
 								if(umax) {FCHK(bclients,bentries);} else {FRAME40(frame404);}
-								c2=0;
+								c2 = 0;
 								break;
 							case '5':
 								if(umax) {FRAME40(framereg);}else{FRAME40(frame404);}
-								c2=0;
+								c2 = 0;
 								break;
 							default:
 								FCHK(dclients,dentries);
