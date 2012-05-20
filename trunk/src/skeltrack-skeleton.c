@@ -91,6 +91,7 @@ struct _Node {
   gint x;
   gint y;
   gint z;
+  gint index;
   GList *neighbors;
   GList *linked_nodes;
   Label *label;
@@ -956,8 +957,8 @@ make_graph (SkeltrackSkeleton *self, GList **label_list)
           gint south, north, west;
           Label *lowest_index_label = NULL;
           Label *neighbor_labels[4] = {NULL, NULL, NULL, NULL};
-
-          value = buffer[j * width + i];
+		  index = j * width + i;
+          value = buffer[index];
           if (value == 0)
             continue;
 
@@ -965,6 +966,7 @@ make_graph (SkeltrackSkeleton *self, GList **label_list)
           node->i = i;
           node->j = j;
           node->z = value;
+          node->index = index;
           convert_screen_coords_to_mm (self,
                                        i, j,
                                        node->z,
@@ -1199,14 +1201,8 @@ get_longer_distance (SkeltrackSkeleton *self, gint *distances)
       Node *node;
       node = (Node *) current->data;
       if (node != NULL &&
-          (distances[farthest_node->j *
-                     self->priv->buffer_width +
-                     farthest_node->i] != -1 &&
-           distances[farthest_node->j *
-                     self->priv->buffer_width +
-                     farthest_node->i] < distances[node->j *
-                                                   self->priv->buffer_width +
-                                                   node->i]))
+          (distances[farthest_node->index] != -1 &&
+           distances[farthest_node->index] < distances[node->index]))
         {
           farthest_node = node;
         }
@@ -1229,9 +1225,9 @@ dijkstra_to (GList *nodes, Node *source, Node *target,
     {
       Node *node;
       node = (Node *) current->data;
-      previous[node->j * width + node->i] = NULL;
+      previous[node->index] = NULL;
     }
-  distances[source->j * width + source->i] = 0;
+  distances[source->index] = 0;
 
   unvisited_nodes = g_list_copy (nodes);
   nr = 0;
@@ -1247,11 +1243,9 @@ dijkstra_to (GList *nodes, Node *source, Node *target,
           Node *value, *shorter_dist;
           value = (Node *) cur_node->data;
           shorter_dist = (Node *) shorter_dist_node->data;
-          if (distances[shorter_dist->j * width + shorter_dist->i] == -1 ||
-              (distances[value->j * width + value->i] != -1 &&
-               distances[value->j * width +
-                         value->i] < distances[shorter_dist->j * width +
-                                               shorter_dist->i]))
+          if (distances[shorter_dist->index] == -1 ||
+              (distances[value->index] != -1 &&
+               distances[value->index] < distances[shorter_dist->index]))
             {
               shorter_dist_node = cur_node;
             }
@@ -1259,7 +1253,7 @@ dijkstra_to (GList *nodes, Node *source, Node *target,
         }
 
       node = (Node *) shorter_dist_node->data;
-      if (distances[node->j * width + node->i] == -1)
+      if (distances[node->index] == -1)
         {
           break;
         }
@@ -1272,14 +1266,14 @@ dijkstra_to (GList *nodes, Node *source, Node *target,
 
           neighbor = (Node *) current_neighbor->data;
           dist = get_distance(node, neighbor) +
-            distances[node->j * width + node->i];
-		  if (distances[neighbor->j * width + neighbor->i] == -1 ||
-              dist < distances[neighbor->j * width + neighbor->i])
+            distances[node->index];
+		  if (distances[neighbor->index] == -1 ||
+              dist < distances[neighbor->index])
             {
-              distances[neighbor->j * width + neighbor->i] = dist;
+              distances[neighbor->index] = dist;
               if (previous != NULL)
                 {
-                  previous[neighbor->j * width + neighbor->i] = node;
+                  previous[neighbor->index] = node;
                 }
               nr++;
             }
@@ -1338,7 +1332,7 @@ get_extremas (SkeltrackSkeleton *self, Node *centroid)
 
       if (node != source)
         {
-          priv->distances_matrix[node->j * priv->buffer_width + node->i] = 0;
+          priv->distances_matrix[node->index] = 0;
           source->linked_nodes = g_list_append (source->linked_nodes, node);
           node->linked_nodes = g_list_append (node->linked_nodes, source);
           source = node;
@@ -1351,9 +1345,8 @@ get_extremas (SkeltrackSkeleton *self, Node *centroid)
 
 static gboolean
 get_head_and_shoulders (GList *nodes,
-                        guint32 shoulders_minimum_distance,
-                        guint32 shoulders_maximum_distance,
-                        guint16 shoulders_maximum_distance_sqrt,
+                        guint16 shoulders_minimum_distance,
+                        guint16 shoulders_maximum_distance,
                         guint16 shoulders_offset,
                         GList *extremas,
                         Node *centroid,
@@ -1363,7 +1356,7 @@ get_head_and_shoulders (GList *nodes,
 {
   Node *node, *shoulder_point;
   Node *right_shoulder_closest_point, *left_shoulder_closest_point;
-  gint32 right_shoulder_dist, left_shoulder_dist, shoulders_distance;
+  gint16 right_shoulder_dist, left_shoulder_dist, shoulders_distance;
   GList *current_extrema;
 
   for (current_extrema = g_list_first (extremas);
@@ -1382,17 +1375,23 @@ get_head_and_shoulders (GList *nodes,
 
       right_shoulder_closest_point = get_closest_node (nodes, shoulder_point);
       if (right_shoulder_closest_point->i > centroid->i)
-        continue;
+        {
+          g_slice_free (Node, shoulder_point);
+          continue;
+        }
 
       shoulder_point->x = node->x + shoulders_offset / 2;
 
       left_shoulder_closest_point = get_closest_node (nodes, shoulder_point);
       if (left_shoulder_closest_point->i < centroid->i)
-        continue;
+        {
+          g_slice_free (Node, shoulder_point);
+          continue;
+        }
 
-      right_shoulder_dist = get_distance_square (node, right_shoulder_closest_point);
-      left_shoulder_dist = get_distance_square (node, left_shoulder_closest_point);
-      shoulders_distance = get_distance_square (left_shoulder_closest_point,
+      right_shoulder_dist = get_distance (node, right_shoulder_closest_point);
+      left_shoulder_dist = get_distance (node, left_shoulder_closest_point);
+      shoulders_distance = get_distance (left_shoulder_closest_point,
                                          right_shoulder_closest_point);
 
       if (right_shoulder_closest_point->i < node->i &&
@@ -1402,7 +1401,7 @@ get_head_and_shoulders (GList *nodes,
           left_shoulder_dist > shoulders_minimum_distance &&
           left_shoulder_dist < shoulders_maximum_distance &&
           ABS (right_shoulder_closest_point->y -
-               left_shoulder_closest_point->y) < shoulders_maximum_distance_sqrt &&
+               left_shoulder_closest_point->y) < shoulders_maximum_distance &&
           shoulders_distance <= shoulders_maximum_distance)
         {
           *head = node;
@@ -1471,7 +1470,7 @@ identify_arm_extrema (gint *distances,
   if (extrema == NULL)
     return;
 
-  total_dist = distances[width * extrema->j + extrema->i];
+  total_dist = distances[extrema->index];
   if (total_dist < hand_distance)
     {
       *elbow_extrema = extrema;
@@ -1482,12 +1481,12 @@ identify_arm_extrema (gint *distances,
       Node *previous;
       gint elbow_dist;
 
-      previous = previous_nodes[extrema->j * width + extrema->i];
+      previous = previous_nodes[extrema->index];
       elbow_dist = total_dist / 2;
       while (previous &&
-             distances[previous->j * width + previous->i] > elbow_dist)
+             distances[previous->index] > elbow_dist)
         {
-          previous = previous_nodes[previous->j * width + previous->i];
+          previous = previous_nodes[previous->index];
         }
       *elbow_extrema = previous;
       *hand_extrema = extrema;
@@ -1623,10 +1622,10 @@ set_left_and_right_from_extremas (SkeltrackSkeleton *self,
                dist_right_b,
                previous_right_b);
 
-  total_dist_left_a = dist_left_a[ext_a->j * width + ext_a->i];
-  total_dist_right_a = dist_right_a[ext_a->j * width + ext_a->i];
-  total_dist_left_b = dist_left_b[ext_b->j * width + ext_b->i];
-  total_dist_right_b = dist_right_b[ext_b->j * width + ext_b->i];
+  total_dist_left_a = dist_left_a[ext_a->index];
+  total_dist_right_a = dist_right_a[ext_a->index];
+  total_dist_left_b = dist_left_b[ext_b->index];
+  total_dist_right_b = dist_right_b[ext_b->index];
 
   left = NULL;
   right = NULL;
@@ -1719,8 +1718,7 @@ track_joints (SkeltrackSkeleton *self)
 
   if (g_list_length (extremas) > 2 &&
       get_head_and_shoulders (self->priv->graph,
-                              self->priv->shoulders_minimum_distance_square,
-                              self->priv->shoulders_maximum_distance_square,
+                              self->priv->shoulders_minimum_distance,
                               self->priv->shoulders_maximum_distance,
                               self->priv->shoulders_offset,
                               extremas,
