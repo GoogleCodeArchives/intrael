@@ -1,7 +1,7 @@
 #summary One-sentence summary of this page.
 
 
-We've been typing and clicking for so long that it feels natural by now, but evolution also comes by naturally. For those not already acquainted with the Kinect, it's the first ever consumer grade depth camera that will help us redefine the way we interact with computers. Of course, interaction also needs a counterpart and on the other side of the pond, HTML has grown to be the best bundle of technologies for media delivery. It's no wonder that it has the greatest userbase as well. If only we could integrate the kinect with the web somehow, that vast crowd of developers could immediately join the UI revolution that's starting up. Let's see what we can do about that. 
+We've been typing and clicking for so long that it feels natural by now, but evolution also comes by naturally. For those not already acquainted with the Kinect, it's the first ever consumer grade depth camera that will help us redefine the way we interact with computers. Of course, interaction also needs a counterpart and on the other side of the pond, HTML has grown to be the best bundle of technologies for media delivery. It's no wonder that it has the greatest userbase as well. So, all that's missing is integrating the kinect with the web somehow. But where do we start in order to get there?  
 
 
 [http://1.bp.blogspot.com/-OjyDVGcsu68/TkffA1Fo90I/AAAAAAAAAHg/zP0k6QhlrK0/s1600/KinectIR.png]
