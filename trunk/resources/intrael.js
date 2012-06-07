@@ -190,7 +190,12 @@ Intrael.prototype = {
 			delete this.query;
 		}
 	},
-
+	spatial: function(p){
+		/* http://openkinect.org/wiki/Imaging_Information */
+		p.sx = Math.round((2*p.x - 320) * (p.z -100) * 0.0028);
+ 	    p.sy = Math.round((2*p.y - 240) * (p.z -100) * 0.0021);
+		return p;
+	},
 	_parse: function(data){
 		var blobs=[],joints=null;
 		var labels = ["center","left","right","top","bottom","near","far"];
