@@ -49,7 +49,8 @@ int die = 0;
 
 #define NULL	0
 #define EOF	(-1)
-#define IOVEC struct WSABUF
+typedef WSABUF IOVEC;
+#define WSAEAGAIN WSAEWOULDBLOCK
 #define NONBLOCKING(s) ioctlsocket(s, FIONBIO, &NonBlock)
 #define INITSOCKET(s) 	if ((s = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) exit(1)
 #define SIGEXIT() 	die=1;\
