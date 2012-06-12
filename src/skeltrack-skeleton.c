@@ -59,6 +59,8 @@
 #include <math.h>
 #include <stdlib.h>
 
+#define class CLASS
+
 #include "skeltrack-skeleton.h"
 
 #define SKELTRACK_SKELETON_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), \
@@ -206,8 +208,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             1,
                                             1024,
                                             DIMENSION_REDUCTION,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+											(GParamFlags)( G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
 
   /**
    * SkeltrackSkeleton:graph-distance-threshold
@@ -225,8 +227,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             1,
                                             G_MAXUINT16,
                                             GRAPH_DISTANCE_THRESHOLD,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+                                            (GParamFlags)(G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
 
   /**
    * SkeltrackSkeleton:graph-minimum-number-nodes
@@ -243,8 +245,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             1,
                                             G_MAXUINT16,
                                             GRAPH_MINIMUM_NUMBER_OF_NODES,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+                                            (GParamFlags)(G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
 
   /**
    * SkeltrackSkeleton:hands-minimum-distance
@@ -263,8 +265,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             300,
                                             G_MAXUINT,
                                             HANDS_MINIMUM_DISTANCE,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+                                            (GParamFlags)(G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
 
   /**
    * SkeltrackSkeleton:shoulders-minimum-distance
@@ -281,8 +283,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             100,
                                             G_MAXUINT16,
                                             SHOULDERS_MINIMUM_DISTANCE,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+                                            (GParamFlags)(G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
 
   /**
    * SkeltrackSkeleton:shoulders-maximum-distance
@@ -299,8 +301,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             150,
                                             G_MAXUINT16,
                                             SHOULDERS_MAXIMUM_DISTANCE,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+                                            (GParamFlags)(G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
 
   /**
    * SkeltrackSkeleton:shoulders-offset
@@ -318,8 +320,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             150,
                                             G_MAXUINT16,
                                             SHOULDERS_OFFSET,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+                                            (GParamFlags)(G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
   
   
   g_object_class_install_property (obj_class,
@@ -331,8 +333,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             0,
                                             G_MAXUINT16,
                                             0,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+                                            (GParamFlags)(G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
  g_object_class_install_property (obj_class,
                          PROP_BOUND_TOP,
                          g_param_spec_uint ("bound-top",
@@ -342,8 +344,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             0,
                                             G_MAXUINT16,
                                             0,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+                                            (GParamFlags)(G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
  g_object_class_install_property (obj_class,
                          PROP_BOUND_RIGHT,
                          g_param_spec_uint ("bound-right",
@@ -353,8 +355,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             1,
                                             G_MAXUINT16,
                                             G_MAXUINT16,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+                                            (GParamFlags)(G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
  g_object_class_install_property (obj_class,
                          PROP_BOUND_BOTTOM,
                          g_param_spec_uint ("bound-bottom",
@@ -364,8 +366,8 @@ skeltrack_skeleton_class_init (SkeltrackSkeletonClass *class)
                                             1,
                                             G_MAXUINT16,
                                             G_MAXUINT16,
-                                            G_PARAM_READWRITE |
-                                            G_PARAM_STATIC_STRINGS));
+                                            (GParamFlags)(G_PARAM_READWRITE |
+                                            G_PARAM_STATIC_STRINGS)));
 
   /* add private structure */
   g_type_class_add_private (obj_class, sizeof (SkeltrackSkeletonPrivate));
@@ -595,9 +597,9 @@ convert_screen_coords_to_mm (SkeltrackSkeleton *self,
   guint dimension_reduction = self->priv->dimension_reduction;
 
   /* Formula from http://openkinect.org/wiki/Imaging_Information */
-  *x = round((i * dimension_reduction - width * dimension_reduction / 2.0) *
+  *x = floor((i * dimension_reduction - width * dimension_reduction / 2.0) *
              (z + MIN_DISTANCE) * SCALE_FACTOR * (width / height));
-  *y = round((j * dimension_reduction - height * dimension_reduction / 2.0) *
+  *y = floor((j * dimension_reduction - height * dimension_reduction / 2.0) *
              (z + MIN_DISTANCE) * SCALE_FACTOR);
 }
 
@@ -608,7 +610,7 @@ get_distance (Node *a, Node *b)
   dx = ABS (a->x - b->x);
   dy = ABS (a->y - b->y);
   dz = ABS (a->z - b->z);
-  return sqrt (dx * dx + dy * dy + dz * dz);
+  return sqrtf( dx * dx + dy * dy + dz * dz);
 }
 
 static gint
@@ -941,7 +943,7 @@ make_graph (SkeltrackSkeleton *self, GList **label_list)
 
   if (priv->node_matrix == NULL)
     {
-      priv->node_matrix = g_slice_alloc0 (width * height * sizeof (Node *));
+      priv->node_matrix = (Node**) g_slice_alloc0 (width * height * sizeof (Node *));
     }
   else
     {
@@ -1062,12 +1064,13 @@ make_graph (SkeltrackSkeleton *self, GList **label_list)
          the minimum required */
       if (g_list_length (label->nodes) < priv->min_nr_nodes)
         {
-          nodes = remove_nodes_with_label (nodes,
+          GList *link = current_label;
+			nodes = remove_nodes_with_label (nodes,
                                            priv->node_matrix,
                                            priv->buffer_width,
                                            label);
 
-          GList *link = current_label;
+          
           current_label = g_list_next (current_label);
           labels = g_list_delete_link (labels, link);
           free_label (label);
@@ -1306,7 +1309,7 @@ get_extremas (SkeltrackSkeleton *self, Node *centroid)
   matrix_size = priv->buffer_width * priv->buffer_height;
   if (priv->distances_matrix == NULL)
     {
-      priv->distances_matrix = g_slice_alloc0 (matrix_size * sizeof (gint32));
+      priv->distances_matrix = (gint*) g_slice_alloc0 (matrix_size * sizeof (gint32));
     }
 
   for (i = 0; i < matrix_size; i++)
@@ -1419,7 +1422,7 @@ create_new_dist_matrix (gint matrix_size)
   guint i;
   gint32 *distances;
 
-  distances = g_slice_alloc0 (matrix_size * sizeof (gint32));
+  distances = (gint*) g_slice_alloc0 (matrix_size * sizeof (gint32));
   for (i = 0; i < matrix_size; i++)
     {
       distances[i] = -1;
@@ -1582,10 +1585,10 @@ set_left_and_right_from_extremas (SkeltrackSkeleton *self,
   height = self->priv->buffer_height;
   matrix_size = width * height;
 
-  previous_left_a = g_slice_alloc0 (matrix_size * sizeof (Node *));
-  previous_left_b = g_slice_alloc0 (matrix_size * sizeof (Node *));
-  previous_right_a = g_slice_alloc0 (matrix_size * sizeof (Node *));
-  previous_right_b = g_slice_alloc0 (matrix_size * sizeof (Node *));
+  previous_left_a = (Node**) g_slice_alloc0 (matrix_size * sizeof (Node *));
+  previous_left_b = (Node**)g_slice_alloc0 (matrix_size * sizeof (Node *));
+  previous_right_a = (Node**)g_slice_alloc0 (matrix_size * sizeof (Node *));
+  previous_right_b = (Node**)g_slice_alloc0 (matrix_size * sizeof (Node *));
 
   dist_left_a = create_new_dist_matrix(matrix_size);
   dijkstra_to (self->priv->graph,
@@ -1713,7 +1716,7 @@ track_joints (SkeltrackSkeleton *self)
   centroid = get_centroid (self);
   extremas = get_extremas (self, centroid);
 
-  joints = g_slice_alloc0 (SKELTRACK_JOINT_MAX_JOINTS *
+  joints = (SkeltrackJoint**)g_slice_alloc0 (SKELTRACK_JOINT_MAX_JOINTS *
                            sizeof (SkeltrackJoint *));
 
   if (g_list_length (extremas) > 2 &&
@@ -1774,11 +1777,12 @@ dispatch_thread_func (gpointer _data)
     {
       if (self->priv->track_joints_result != NULL)
         {
+			GSimpleAsyncResult *res;
           SkeltrackJointList joints = track_joints (self);
 
           g_mutex_lock (self->priv->dispatch_mutex);
 
-          GSimpleAsyncResult *res =
+          res =
             (GSimpleAsyncResult *) self->priv->track_joints_result;
           g_simple_async_result_set_op_res_gpointer (res, joints, NULL);
 
@@ -1845,7 +1849,7 @@ clean_tracking_resources (SkeltrackSkeleton *self)
 GObject *
 skeltrack_skeleton_new (void)
 {
-  return g_object_new (SKELTRACK_TYPE_SKELETON, NULL);
+  return (GObject*) g_object_new (SKELTRACK_TYPE_SKELETON, NULL);
 }
 
 /**
@@ -1957,7 +1961,7 @@ skeltrack_skeleton_track_joints_finish (SkeltrackSkeleton *self,
   if (! g_simple_async_result_propagate_error (res, error))
     {
       SkeltrackJointList joints = NULL;
-      joints = g_simple_async_result_get_op_res_gpointer (res);
+	  joints = (SkeltrackJointList) g_simple_async_result_get_op_res_gpointer (res);
       return joints;
     }
   else

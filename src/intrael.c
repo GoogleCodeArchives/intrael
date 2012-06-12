@@ -292,8 +292,8 @@ void *depth_thread()
 		}
 		g_mutex_lock(dev_mutex);
 		if(f_dev){
-			if(!refcount && led != LED_GREEN) freenect_set_led(f_dev,(led = LED_GREEN));
-			else if(refcount > 1 && led != LED_BLINK_RED_YELLOW ) freenect_set_led(f_dev,(led = LED_BLINK_RED_YELLOW));
+			if(!refcount && led != (uint32_t)LED_GREEN) freenect_set_led(f_dev,(freenect_led_options)(led = LED_GREEN));
+			else if(refcount > 1 && led != (uint32_t)LED_BLINK_RED_YELLOW ) freenect_set_led(f_dev,(freenect_led_options)(led = LED_BLINK_RED_YELLOW));
 		}
 		g_mutex_unlock(dev_mutex);
 		if(refcount) {
@@ -458,6 +458,7 @@ void *depth_thread()
 					for(; gmin != gmax; gmin++) {
 						depth_to_gray[gmin] = ((ni-depth_to_mm[gmin])/ftmp)*255;
 					}
+					depth_to_gray[0]=0;
 #if defined USE_SSE
 					_mm_empty();
 #endif
@@ -908,7 +909,7 @@ int main(int argc, char **argv)
 	unsigned char *mbuf, mtemp[16];
 	MD5_CTX *md5;
 	f_dev=NULL;
-	static IOVEC sdata[2];
+	IOVEC sdata[2];
 	FILE *fp = NULL;
 	fd_set rd,wr,master,streaming;
 	struct sockaddr_storage clientaddr;
