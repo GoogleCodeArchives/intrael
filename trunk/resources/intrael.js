@@ -202,8 +202,8 @@ Intrael.prototype = {
 		var hasJoints;
 		for(var i=16,imax=data.length;i!=imax;i+=32){
 			blob={px:data[i+28], rs:data[i+29], vr:data[i+30], dt:data[i+31]};
-			for(var j=0,k=0;j != 28;j+= 4,k++)	blob[labels[k]] = {'x':data[i+j],'y':data[i+j+1],'z':data[i+j+2],'d':data[i+j+3]};	
-			blobs.push(this._spat(blob));
+			for(var j=0,k=0;j != 28;j+= 4,k++)	blob[labels[k]] = this._spat({'x':data[i+j],'y':data[i+j+1],'z':data[i+j+2],'d':data[i+j+3]});	
+			blobs.push(blob);
 		}
 		return {'blobs':blobs,'header':{'time':data[0],'last':data[1],'ext':data[2],'left':data[3],'right':data[4],'top':data[5],'bottom':data[6],'near':data[7],'far':data[8],'min':data[9],'max':data[10],'ax':data[11],'ay':data[12],'az':data[13],'angle':data[14],'motor':data[15]}};
 	}
