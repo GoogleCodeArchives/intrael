@@ -197,9 +197,8 @@ Intrael.prototype = {
 		return p;
 	},
 	_parse: function(data){
-		var blobs=[],joints=null;
+		var blobs=[];
 		var labels = ["center","left","right","top","bottom","near","far"];
-		var hasJoints;
 		for(var i=16,imax=data.length;i!=imax;i+=32){
 			blob={px:data[i+28], rs:data[i+29], vr:data[i+30], dt:data[i+31]};
 			for(var j=0,k=0;j != 28;j+= 4,k++)	blob[labels[k]] = this._spat({'x':data[i+j],'y':data[i+j+1],'z':data[i+j+2],'d':data[i+j+3]});	

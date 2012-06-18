@@ -22,17 +22,18 @@
 # CMake directives
 ######################################################################################
 
+if (WIN32)
+  set_source_files_properties(intrael.c PROPERTIES LANGUAGE CXX)
+  include_directories(${THREADS_PTHREADS_INCLUDE_DIR})
+endif()
 
-include_directories (${CMAKE_CURRENT_SOURCE_DIR} ${LIBFREENECT_INCLUDE_DIRS} ${GLIB2_INCLUDE_DIRS} ${LIBJPEG_INCLUDE_DIRS} ${GTHREAD2_INCLUDE_DIRS}  ${GOBJECT2_INCLUDE_DIRS} ${GIO_INCLUDE_DIRS})
-LIST(APPEND SRC intrael.c md5.c skeltrack-joint.c skeltrack-skeleton.c)
-IF(WIN32)
-  set_source_files_properties(${SRC} PROPERTIES LANGUAGE CXX)
-ENDIF(WIN32)
+include_directories (${CMAKE_CURRENT_SOURCE_DIR} ${LIBFREENECT_INCLUDE_DIRS} ${LIBJPEG_INCLUDE_DIRS})
+LIST(APPEND SRC intrael.c md5.c)
 add_executable (intrael ${SRC})
 if (WIN32)
-  target_link_libraries(intrael ${GLIB2_LIBRARIES} ${LIBFREENECT_LIBRARIES} ${LIBJPEG_LIBRARIES} ${GTHREAD2_LIBRARIES} ${GOBJECT2_LIBRARIES} ${GIO_LIBRARIES} Ws2_32)
+  target_link_libraries(intrael  ${LIBFREENECT_LIBRARIES} ${LIBJPEG_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} Ws2_32)
 else(WIN32)
-  target_link_libraries(intrael ${GLIB2_LIBRARIES} ${LIBFREENECT_LIBRARIES} ${LIBJPEG_LIBRARIES} ${GTHREAD2_LIBRARIES} ${GOBJECT2_LIBRARIES} ${GIO_LIBRARIES} m)
+  target_link_libraries(intrael  ${LIBFREENECT_LIBRARIES} ${LIBJPEG_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} m)
 endif(WIN32)
 
 install (TARGETS intrael DESTINATION bin)
