@@ -1,8 +1,8 @@
 === 2.0 RC1 ===
 
 	New features:
-		- Shifting tables for Depth->RGB are provided(-t option)
-		- Raw frames(600k each) provided as binary files via /3x
+		- Registration tables for Depth->RGB cameras are provided
+		- Uncompressed frames provided as binary via /3x and /4x
 		- Max number of connections per IP supported through -m
 		- Can limit a single IP and/or origin for config requests
 		- A convenience lib is provided. Feel free to enhance it.
@@ -12,7 +12,7 @@
 		- Optimised algorithm with nice speedup especially for non-SIMD
 		- Can request polling or streaming directly. No need to restart.
 		- The depth camera jpeg generation was polished and optimised.
-		
+		- Depth camera jpeg generation was decoupled from the json one.
 
 === 1.1 ===
 

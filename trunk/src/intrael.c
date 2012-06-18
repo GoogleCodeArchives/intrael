@@ -152,14 +152,14 @@ METHODDEF(void) jpeg_set_frame (j_compress_ptr cinfo,char *buf, uint16_t *len)
 
 void depth_cb(freenect_device* dev, void *v_depth, uint32_t timestamp)
 {
-	g_mutex_lock(depth_mutex);
+	pthread_mutex_lock(&depth_mutex);
 	dstamp=timestamp;
 	if (dwait<2) {
 		dwait++;
 		freenect_set_depth_buffer(f_dev,depth_raw[(dcb+dwait)%3]);
-		g_cond_signal(depth_cond);
+		pthread_cond_signal(&depth_cond);
 	}
-	g_mutex_unlock(depth_mutex);
+	pthread_mutex_unlock(&depth_mutex);
 }
 
 void *depth_thread()
@@ -170,15 +170,11 @@ void *depth_thread()
 	FILE *fp = NULL;
 	char opts[] = "xXzZyYcCe";
 	freenect_raw_tilt_state* state=NULL;
-	static uint16_t X,i,dz,dZ,dzv,dZv,x,y,rawz,rawZ,*frame,*dref,*drz,*drZ,len,gmin,gmax,skelcount;
+	static uint16_t X,i,dz,dZ,dzv,dZv,x,y,rawz,rawZ,*frame,*dref,*drz,*drZ,len,gmin,gmax;
 	static int32_t ni,da,l,n,rs,re,rt,er,sr,label,running;
 	uint8_t framefix,encode,dmap,json;
 	static uint8_t *raw,*draw;
 	static int refcount,mode,gdump,t_x,t_X,t_y,t_Y,t_z,t_Z,t_c,t_C,t_g,t_s,itmp;
-	static SkeltrackJoint *joint;
-	static SkeltrackJointList list;
-	GValue dval = G_VALUE_INIT;
-	g_value_init (&dval, G_TYPE_INT);
 	int32_t cbuf[128];
 	double ax,az,ay,angle;
 	static float ftmp;
@@ -187,9 +183,6 @@ void *depth_thread()
 	unsigned char*jblack=(unsigned char*)black;
 	unsigned char*jgray=(unsigned char*)gray;
 	framefix = refcount = t_z = t_Z = mode = 0;
-	skeleton = SKELTRACK_SKELETON (skeltrack_skeleton_new ());
-	g_value_set_int (&dval,8);
-	g_object_set_property (G_OBJECT (skeleton), "dimension-reduction", &dval);
 	t_s=0;
 	angle=32;
 	HSET(dhead,STR_JSON_S,STR_JSON_M,0);
@@ -203,22 +196,22 @@ void *depth_thread()
 	LIST_INIT(&rframes);
 	memset(&jerr, 0, sizeof(jerr));
 	JSET(ginfo,JCS_GRAYSCALE,1);
-	g_mutex_lock(dev_mutex);
+	pthread_mutex_lock(&dev_mutex);
 	if(f_dev){
 		MSTATE();
 	}
-	g_mutex_unlock(dev_mutex);
+	pthread_mutex_unlock(&dev_mutex);
 	while(1) {
-		g_mutex_lock(depth_mutex);
-		while(!dwait) g_cond_wait(depth_cond, depth_mutex);
+		pthread_mutex_lock(&depth_mutex);
+		while(!dwait) pthread_cond_wait(&depth_cond, &depth_mutex);
 		draw=depth_raw[dcb%3];
-		g_mutex_unlock(depth_mutex);
-		g_mutex_lock(conf_mutex);
+		pthread_mutex_unlock(&depth_mutex);
+		pthread_mutex_lock(&conf_mutex);
 		if(gbuf[0]) {
 			memcpy(cbuf,gbuf,512);
 			gbuf[0]=0;
 		}
-		g_mutex_unlock(conf_mutex);
+		pthread_mutex_unlock(&conf_mutex);
 		while(cbuf[0]) {
 			if(cbuf['b']) {
 				cbuf['b'] = 0;
@@ -252,9 +245,9 @@ void *depth_thread()
 			t_c = cbuf['c'];
 			t_C = cbuf['C'];
 			t_s = cbuf['s'];
-			g_mutex_lock(dev_mutex);
+			pthread_mutex_lock(&dev_mutex);
 			if(cbuf['a'] != angle && f_dev) freenect_set_tilt_degs(f_dev,(double)(angle=cbuf['a']));
-			g_mutex_unlock(dev_mutex);
+			pthread_mutex_unlock(&dev_mutex);
 			t_g = cbuf['g'];
 			if(mode != cbuf['e']) n=1;
 			mode = cbuf['e'];
@@ -290,12 +283,12 @@ void *depth_thread()
 				memcpy(((char *)depth_ref) + 640*((int)opts[i]) - 6,buf,6);
 			}
 		}
-		g_mutex_lock(dev_mutex);
+		pthread_mutex_lock(&dev_mutex);
 		if(f_dev){
 			if(!refcount && led != (uint32_t)LED_GREEN) freenect_set_led(f_dev,(freenect_led_options)(led = LED_GREEN));
 			else if(refcount > 1 && led != (uint32_t)LED_BLINK_RED_YELLOW ) freenect_set_led(f_dev,(freenect_led_options)(led = LED_BLINK_RED_YELLOW));
 		}
-		g_mutex_unlock(dev_mutex);
+		pthread_mutex_unlock(&dev_mutex);
 		if(refcount) {
 			if(refcount>0) {
 				framefix=1;
@@ -321,10 +314,10 @@ void *depth_thread()
 			}
 			refcount = (refcount == -1) ? 0: refcount-1;
 			if(refcount) {
-				g_mutex_lock(depth_mutex);
+				pthread_mutex_lock(&depth_mutex);
 				dcb++;
 				dwait--;
-				g_mutex_unlock(depth_mutex);
+				pthread_mutex_unlock(&depth_mutex);
 				continue;
 			} else {
 				if(framefix) {
@@ -415,7 +408,7 @@ void *depth_thread()
 		}
 		//Slightly modified run based component labelling by Dr Suzuki and friends
 		do {
-			g_mutex_lock(net_mutex);
+			pthread_mutex_lock(&net_mutex);
 			IF_NOT_FRAME(dframe,dframes,dhead,dentries,frmax,dmiss) {
 				json=0;
 			}else{
@@ -437,14 +430,14 @@ void *depth_thread()
 				FDUMP(ndframe,dmiss,dframes,dentries);
 				FDUMP(ngframe,gmiss,gframes,gentries);
 				FDUMP(nrframe,rmiss,rframes,rentries);
-				g_mutex_unlock(net_mutex);
-				g_mutex_lock(depth_mutex);
+				pthread_mutex_unlock(&net_mutex);
+				pthread_mutex_lock(&depth_mutex);
 				dcb++;
 				dwait--;
-				g_mutex_unlock(depth_mutex);
+				pthread_mutex_unlock(&depth_mutex);
 				break;
 			}
-			g_mutex_unlock(net_mutex);
+			pthread_mutex_unlock(&net_mutex);
 			
 			if(json){
 				if(!dframe) {
@@ -479,100 +472,74 @@ void *depth_thread()
 			
 			l = n = 1 ;
 			if(json){
-				if(t_s){
-					raw = draw;
-					if(mode){
-						for(ni=0,i=40;ni!=1200;ni++,raw+=22){
-							da=*(raw) << 3 | *(raw+1) >> 5;
-							sbuf[ni] = da > depth_ref_z[ni] && da < depth_ref_Z[ni] ? depth_to_mm[da]:0;	
-							if(!(--i)){
-								raw += 13200;
-								i=40;
-							}
-						}	
-					}else{
-						rawz=depth_to_raw[t_z];
-						rawZ=depth_to_raw[t_Z];
-						for(ni=0,i=40;ni!=1200;ni++,raw+=22){
-							da=*(raw) << 3 | *(raw+1) >> 5;
-							sbuf[ni] = da > rawz && da < rawZ ? depth_to_mm[da]:0;	
-							if(!(--i)){
-								raw += 13200;
-								i=40;
-							}
+				#if defined USE_SSE
+				__m64 mmask=_mm_set1_pi16(2047);
+				#elif defined USE_SSE2
+				__m128i mmask=_mm_set1_epi16(2047);
+				#elif defined USE_NEON
+				uint16x8_t mmask = vdupq_n_u16(2047);
+				#endif
+				i = t_x;
+				y = t_y;
+				running = label = dz = dZ = dzv = dZv = ni = rs = rt = re =  0;
+				itmp=i+320*y;
+				drz=depth_ref_z + itmp;
+				drZ=depth_ref_Z + itmp;
+				frame=depth + itmp;
+				raw = draw + (((int)(640*y+i)/4)*11);
+				if(mode) {
+					while(1) {
+						UNPACK();
+						IF_EXT(0) {PROC(0);}
+						IF_EXT(1) {PROC(1);}
+						IF_EXT(2) {PROC(2);}
+						IF_EXT(3) {PROC(3);}
+						IF_EXT(4) {PROC(4);}
+						IF_EXT(5) {PROC(5);}
+						IF_EXT(6) {PROC(6);}
+						IF_EXT(7) {PROC(7);}
+						IF_NEXT() {
+							raw += 22;
+							frame += 8;
+							drz+=8;
+							drZ+=8;
+						}
+						else {
+							JUMP();
+							itmp=i+320*y;
+							drz=depth_ref_z + itmp;
+							drZ=depth_ref_Z + itmp;
 						}
 					}
-				}
-				if(!(t_s < 0 && !(dmap || encode))){
+				} else {
+					rawz=depth_to_raw[t_z];
+					rawZ=depth_to_raw[t_Z];
 					#if defined USE_SSE
-					__m64 mmask=_mm_set1_pi16(2047);
+					__m64 rmz=_mm_set1_pi16(rawz);
+					__m64 rmZ=_mm_set1_pi16(rawZ);
 					#elif defined USE_SSE2
-					__m128i mmask=_mm_set1_epi16(2047);
+					__m128i rmz=_mm_set1_epi16(rawz);
+					__m128i rmZ=_mm_set1_epi16(rawZ);
 					#elif defined USE_NEON
-					uint16x8_t mmask = vdupq_n_u16(2047);
+					uint16x8_t rmz=vdupq_n_u16(rawz);
+					uint16x8_t rmZ=vdupq_n_u16(rawZ);
 					#endif
-					i = t_x;
-					y = t_y;
-					running = label = dz = dZ = dzv = dZv = ni = rs = rt = re =  0;
-					itmp=i+320*y;
-					drz=depth_ref_z + itmp;
-					drZ=depth_ref_Z + itmp;
-					frame=depth + itmp;
-					raw = draw + (((int)(640*y+i)/4)*11);
-					if(mode) {
-						while(1) {
-							UNPACK();
-							IF_EXT(0) {PROC(0);}
-							IF_EXT(1) {PROC(1);}
-							IF_EXT(2) {PROC(2);}
-							IF_EXT(3) {PROC(3);}
-							IF_EXT(4) {PROC(4);}
-							IF_EXT(5) {PROC(5);}
-							IF_EXT(6) {PROC(6);}
-							IF_EXT(7) {PROC(7);}
-							IF_NEXT() {
-								raw += 22;
-								frame += 8;
-								drz+=8;
-								drZ+=8;
-							}
-							else {
-								JUMP();
-								itmp=i+320*y;
-								drz=depth_ref_z + itmp;
-								drZ=depth_ref_Z + itmp;
-							}
+					while(1) {
+						ZUNPACK();
+						IF_THR(0) {PROC(0);}
+						IF_THR(1) {PROC(1);}
+						IF_THR(2) {PROC(2);}
+						IF_THR(3) {PROC(3);}
+						IF_THR(4) {PROC(4);}
+						IF_THR(5) {PROC(5);}
+						IF_THR(6) {PROC(6);}
+						IF_THR(7) {PROC(7);}
+						IF_NEXT() {
+							raw += 22;
+							frame += 8;
 						}
-					} else {
-						rawz=depth_to_raw[t_z];
-						rawZ=depth_to_raw[t_Z];
-						#if defined USE_SSE
-						__m64 rmz=_mm_set1_pi16(rawz);
-						__m64 rmZ=_mm_set1_pi16(rawZ);
-						#elif defined USE_SSE2
-						__m128i rmz=_mm_set1_epi16(rawz);
-						__m128i rmZ=_mm_set1_epi16(rawZ);
-						#elif defined USE_NEON
-						uint16x8_t rmz=vdupq_n_u16(rawz);
-						uint16x8_t rmZ=vdupq_n_u16(rawZ);
-						#endif
-						while(1) {
-							ZUNPACK();
-							IF_THR(0) {PROC(0);}
-							IF_THR(1) {PROC(1);}
-							IF_THR(2) {PROC(2);}
-							IF_THR(3) {PROC(3);}
-							IF_THR(4) {PROC(4);}
-							IF_THR(5) {PROC(5);}
-							IF_THR(6) {PROC(6);}
-							IF_THR(7) {PROC(7);}
-							IF_NEXT() {
-								raw += 22;
-								frame += 8;
-							}
-							else {
-								JUMP();
-							}
+						else {
+							JUMP();
 						}
 					}
 				}
@@ -656,10 +623,10 @@ void *depth_thread()
 					}
 				}	
 			}
-			g_mutex_lock(depth_mutex);
+			pthread_mutex_lock(&depth_mutex);
 			dcb++;
 			dwait--;
-			g_mutex_unlock(depth_mutex);
+			pthread_mutex_unlock(&depth_mutex);
 			if(encode) {
 				for(; y!=240; y++) jpeg_write_scanlines(&ginfo,&jblack, TRUE);
 				jpeg_finish_compress(&ginfo);
@@ -715,57 +682,45 @@ void *depth_thread()
 				_mm_empty();
 				#endif
 				if(t_g) {
-					g_mutex_lock(dev_mutex);
+					pthread_mutex_lock(&dev_mutex);
 					if(f_dev){
 						MSTATE();
 					}
-					g_mutex_unlock(dev_mutex);
+					pthread_mutex_unlock(&dev_mutex);
 				}
-				len = 59 + sprintf(dframe->buf+59,"[%u,%d,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%f,%f,%f,%d",dstamp,gdump,mode,t_s,t_x,t_X,t_y,t_Y,t_z,t_Z,t_c,t_C,ax, ay, az,freenect_get_tilt_status(state) ? 31+freenect_get_tilt_status(state) : (int)freenect_get_tilt_degs(state));
-				if(t_s < 0 && !(dmap || encode)){
-					BOUNDSET(0,40,0,30);
-					list = skeltrack_skeleton_track_joints_sync(skeleton,sbuf,40,30,NULL,NULL);
-					SKEL();
-				}else{
-					skelcount = ABS(t_s);
-					while(ni--) {
-						label=l_checked[ni];
-						l=l_count[label];
-						l_count[label]=0;
-						if(len > MAX_BYTES) continue;
-						if((l < t_c)  || (t_C && l > t_C)  ) continue;
-						int posx = l_pos_x[label];
-						int posX = l_pos_X[label];
-						int posy = l_pos_y[label];
-						int posY = l_pos_Y[label];
-						int posz = l_pos_z[label];
-						int posZ = l_pos_Z[label];
-						x= l_cx[label]/(2*l);
-						y= l_cy[label]/l;
-						da = (uint32_t) (x+320*y);
-						dzv=depth_to_mm[l_sum[label]/l];
-						if(skelcount){
-							BOUNDSET(run_s[posx] >> 3,run_e[posX] >>3,run_y[posy]>>3,run_y[posY]>>3);
-							list = skeltrack_skeleton_track_joints_sync(skeleton,sbuf,40,30,NULL,NULL);
-							SKEL();
-							skelcount--;
-						}
-						int rshift=0;
-						int dy =  regbuf[FRAME_PIXELS+da];
-						int dx =  regbuf[da] + regbuf[FRAME_PIXELS*2+dzv];
-						if(dx < 320) {
-							rshift=320*dy+dx;
-						}
-						len += sprintf(dframe->buf+len,",%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%d",x,y,dzv,depth_ref[da],run_s[posx],run_y[posx],depth_to_mm[run_sv[posx]],depth_ref[320*run_y[posx] + run_s[posx]],run_e[posX],run_y[posX],depth_to_mm[run_ev[posX]],depth_ref[320*run_y[posX] + run_e[posX]],run_s[posy],run_y[posy],depth_to_mm[run_sv[posy]],depth_ref[320*run_y[posy] + run_s[posy]],run_e[posY],run_y[posY],depth_to_mm[run_ev[posY]],depth_ref[320*run_y[posY] + run_e[posY]],run_z[posz],run_y[posz],depth_to_mm[run_zv[posz]],depth_ref[320*run_y[posz] + run_z[posz]],run_Z[posZ],run_y[posZ],depth_to_mm[run_Zv[posZ]],depth_ref[320*run_y[posZ] + run_Z[posZ]],l,l_runs[label],(uint32_t)l_vrun[label]/l_runs[label],rshift);
+				len = 59 + sprintf(dframe->buf+59,"[%u,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%f,%f,%f,%d,%d",dstamp,gdump,mode,t_x,t_X,t_y,t_Y,t_z,t_Z,t_c,t_C,ax, ay, az,  (int)freenect_get_tilt_degs(state),freenect_get_tilt_status(state));
+				while(ni--) {
+					label=l_checked[ni];
+					l=l_count[label];
+					l_count[label]=0;
+					if(len > MAX_BYTES) continue;
+					if((l < t_c)  || (t_C && l > t_C)  ) continue;
+					int posx = l_pos_x[label];
+					int posX = l_pos_X[label];
+					int posy = l_pos_y[label];
+					int posY = l_pos_Y[label];
+					int posz = l_pos_z[label];
+					int posZ = l_pos_Z[label];
+					x= l_cx[label]/(2*l);
+					y= l_cy[label]/l;
+					da = (uint32_t) (x+320*y);
+					dzv=depth_to_mm[l_sum[label]/l];
+					int rshift=0;
+					int dy =  regbuf[FRAME_PIXELS+da];
+					int dx =  regbuf[da] + regbuf[FRAME_PIXELS*2+dzv];
+					if(dx < 320) {
+						rshift=320*dy+dx;
 					}
+					len += sprintf(dframe->buf+len,",%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%d",x,y,dzv,depth_ref[da],run_s[posx],run_y[posx],depth_to_mm[run_sv[posx]],depth_ref[320*run_y[posx] + run_s[posx]],run_e[posX],run_y[posX],depth_to_mm[run_ev[posX]],depth_ref[320*run_y[posX] + run_e[posX]],run_s[posy],run_y[posy],depth_to_mm[run_sv[posy]],depth_ref[320*run_y[posy] + run_s[posy]],run_e[posY],run_y[posY],depth_to_mm[run_ev[posY]],depth_ref[320*run_y[posY] + run_e[posY]],run_z[posz],run_y[posz],depth_to_mm[run_zv[posz]],depth_ref[320*run_y[posz] + run_z[posz]],run_Z[posZ],run_y[posZ],depth_to_mm[run_Zv[posZ]],depth_ref[320*run_y[posZ] + run_Z[posZ]],l,l_runs[label],(uint32_t)l_vrun[label]/l_runs[label],rshift);
 				}
+				
 				(dframe->buf)[len++]=']';
 				(dframe->buf)[len++]='\n';
 				(dframe->buf)[len++]='\n';
 				memcpy(dframe->buf,buf,sprintf(buf,STR_JSON,len-59));
 				dframe->l = len;
 				dframe->t = dstamp;
-				g_mutex_lock(net_mutex);
+				pthread_mutex_lock(&net_mutex);
 				FSWAP(dframe,ndframe,dmiss,dframes,dentries);
 			}else{
 				FDUMP(ndframe,dmiss,dframes,dentries);
@@ -780,7 +735,7 @@ void *depth_thread()
 			} else {
 				FDUMP(nrframe,rmiss,rframes,rentries);
 			}
-			g_mutex_unlock(net_mutex);
+			pthread_mutex_unlock(&net_mutex);
 		} while(0);
 	}
 	return 0;
@@ -788,14 +743,14 @@ void *depth_thread()
 
 void video_cb(freenect_device *dev, void *raw_buf, uint32_t timestamp)
 {
-	g_mutex_lock(video_mutex);
+	pthread_mutex_lock(&video_mutex);
 	vstamp=timestamp;
 	if (vwait<2) {
 		vwait++;
 		freenect_set_video_buffer(f_dev,video_raw[(vcb+vwait)%3]);
-		g_cond_signal(video_cond);
+		pthread_cond_signal(&video_cond);
 	}
-	g_mutex_unlock(video_mutex);
+	pthread_mutex_unlock(&video_mutex);
 }
 void *video_thread()
 {
@@ -816,12 +771,12 @@ void *video_thread()
 	memset(&jerr, 0, sizeof(jerr));
 	JSET(cinfo,JCS_RGB,3);
 	while(1) {
-		g_mutex_lock(video_mutex);
-		while(!vwait) g_cond_wait(video_cond, video_mutex);
+		pthread_mutex_lock(&video_mutex);
+		while(!vwait) pthread_cond_wait(&video_cond, &video_mutex);
 		vraw=video_raw[vcb%3];
-		g_mutex_unlock(video_mutex);
+		pthread_mutex_unlock(&video_mutex);
 		do {
-			g_mutex_lock(net_mutex);
+			pthread_mutex_lock(&net_mutex);
 			IF_NOT_FRAME(vframe,vframes,vhead,ventries,frmax,vmiss) {
 				encode=0;
 			}else{
@@ -835,14 +790,14 @@ void *video_thread()
 			if(!(bmap || encode)){
 				FDUMP(nvframe,vmiss,vframes,ventries);
 				FDUMP(nbframe,bmiss,bframes,bentries);
-				g_mutex_unlock(net_mutex);
-				g_mutex_lock(video_mutex);
+				pthread_mutex_unlock(&net_mutex);
+				pthread_mutex_lock(&video_mutex);
 				vcb++;
 				vwait--;
-				g_mutex_unlock(video_mutex);
+				pthread_mutex_unlock(&video_mutex);
 				break;
 			}
-			g_mutex_unlock(net_mutex);
+			pthread_mutex_unlock(&net_mutex);
 			if(encode){
 				if(!vframe) {
 					CFRAME(vframe,vhead,32768);
@@ -869,26 +824,26 @@ void *video_thread()
 						jrgb=(unsigned char*)prgb;
 					}
 			}
-			g_mutex_lock(video_mutex);
+			pthread_mutex_lock(&video_mutex);
 			vcb++;
 			vwait--;
-			g_mutex_unlock(video_mutex);
+			pthread_mutex_unlock(&video_mutex);
 			if(encode){
 				jpeg_finish_compress(&cinfo);
 				memcpy(vframe->buf,buf,sprintf(buf,STR_JPEG,len));
 				vframe->l=len+53;
 				vframe->t=vstamp;
-				g_mutex_lock(net_mutex);
+				pthread_mutex_lock(&net_mutex);
 				FSWAP(vframe,nvframe,vmiss,vframes,ventries);
-				g_mutex_unlock(net_mutex);
+				pthread_mutex_unlock(&net_mutex);
 			}else {
 				FDUMP(nvframe,vmiss,vframes,ventries);
 			}
 			if(bmap){
 				bframe->t=vstamp;
-				g_mutex_lock(net_mutex);
+				pthread_mutex_lock(&net_mutex);
 				FSWAP(bframe,nbframe,bmiss,bframes,bentries);
-				g_mutex_unlock(net_mutex);
+				pthread_mutex_unlock(&net_mutex);
 			}else {
 				FDUMP(nbframe,bmiss,bframes,bentries);
 			}
@@ -931,15 +886,6 @@ int main(int argc, char **argv)
 	uint32_t ncount,count;
 	size_t stacksize=65536;
 	cc = 1;
-	g_type_init();
-	g_thread_init(NULL);
-	depth_mutex=g_mutex_new();
-	video_mutex=g_mutex_new();
-	net_mutex=g_mutex_new();
-	conf_mutex=g_mutex_new();
-	dev_mutex=g_mutex_new();
-	depth_cond=g_cond_new();
-	video_cond=g_cond_new();
 	LIST_HEAD(, client_t) clients;
 	LIST_HEAD(, client_t) dclients;
 	LIST_HEAD(, client_t) vclients;
@@ -1029,8 +975,10 @@ int main(int argc, char **argv)
 				FAIL("Could not find any connected kinects")
 			}
 		}
-	if(!g_thread_create_full((GThreadFunc) &depth_thread,NULL,stacksize,FALSE,TRUE,G_THREAD_PRIORITY_NORMAL,NULL)) FAIL("Could not initialize depth thread, aborting");
-	if(video) if(!g_thread_create_full((GThreadFunc) &video_thread,NULL,stacksize,FALSE,TRUE,G_THREAD_PRIORITY_NORMAL,NULL))  FAIL("Could not initialize video thread, aborting");
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize (&attr, stacksize);
+	if(pthread_create(&dthread, &attr, &depth_thread, NULL)) FAIL("Could not initialize depth thread, aborting");
+	if(video) if(pthread_create(&vthread, &attr, &video_thread, NULL)) FAIL("Could not initialize video thread, aborting");
 	INITSOCKET(listener);
 	NONBLOCKING(listener);
 	addrsize = sizeof clientaddr;
@@ -1044,9 +992,9 @@ int main(int argc, char **argv)
 	while (!die) {
 		if(active)
 		 if(freenect_process_events(f_ctx) < 0){
-			  g_mutex_lock(dev_mutex);
+			  pthread_mutex_lock(&dev_mutex);
 			  active=0;
-			  g_mutex_unlock(dev_mutex);
+			  pthread_mutex_unlock(&dev_mutex);
 		 }
 		if(!active) {
 			if(f_dev){
@@ -1085,14 +1033,14 @@ int main(int argc, char **argv)
 				}
 				freenect_destroy_registration(&reg);
 				
-				g_mutex_lock(conf_mutex);
+				pthread_mutex_lock(&conf_mutex);
 				memcpy(gbuf,cbuf,512);
 				gbuf[0] = cc;
-				g_mutex_unlock(conf_mutex);
+				pthread_mutex_unlock(&conf_mutex);
 				
-				g_mutex_lock(dev_mutex);
+				pthread_mutex_lock(&dev_mutex);
 				active=1;
-				g_mutex_unlock(dev_mutex);
+				pthread_mutex_unlock(&dev_mutex);
 				led = LED_OFF;
 			}
 			timeout.tv_sec = 1;
@@ -1101,9 +1049,9 @@ int main(int argc, char **argv)
 		}
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 0;
-		g_mutex_lock(depth_mutex);
+		pthread_mutex_lock(&depth_mutex);
 		count=gcount;
-		g_mutex_unlock(depth_mutex);
+		pthread_mutex_unlock(&depth_mutex);
 		if(coffset && count >= ncount){
 			ncount=0;
 			LIST_FOREACH(client, &clients, entries) {
@@ -1126,13 +1074,13 @@ int main(int argc, char **argv)
 				}
 			}
 		}
-		g_mutex_lock(net_mutex);
+		pthread_mutex_lock(&net_mutex);
 		SEL(dclients,dmiss,dentries,ndframe,frmod);
 		SEL(gclients,gmiss,gentries,ngframe,frmod);
 		SEL(rclients,rmiss,rentries,nrframe,umod);
 		SEL(vclients,vmiss,ventries,nvframe,frmod);
 		SEL(bclients,bmiss,bentries,nbframe,umod);
-		g_mutex_unlock(net_mutex);
+		pthread_mutex_unlock(&net_mutex);
 		rd=master;
 		wr=streaming;
 		itmp=select(fdmax+1, &rd, &wr, NULL,&timeout);
@@ -1202,9 +1150,9 @@ int main(int argc, char **argv)
 												if(secret) {
 													HASH(cc);
 												}
-												g_mutex_lock(conf_mutex);
+												pthread_mutex_lock(&conf_mutex);
 												memcpy(gbuf,cbuf,512);
-												g_mutex_unlock(conf_mutex);
+												pthread_mutex_unlock(&conf_mutex);
 												if(cbuf['o']) NSWITCH('o');
 												if(cbuf['i']) NSWITCH('i');
 												memcpy(ncbuf,cbuf,512);

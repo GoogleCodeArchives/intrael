@@ -58,11 +58,10 @@ include (SetupDirectories)
 # Find packages needed to build library
 find_package(libfreenect REQUIRED)
 find_package(libjpeg REQUIRED)
-find_package(GLIB2 REQUIRED)
-find_package(GTHREAD2 REQUIRED)
-find_package(GOBJECT2 REQUIRED)
-find_package(GIO REQUIRED)
-#find_package(GMODULE2 REQUIRED)
+if (WIN32)
+  set(THREADS_USE_PTHREADS_WIN32 true)
+endif()
+find_package(Threads REQUIRED)
 
 ######################################################################################
 # CMake 
@@ -74,9 +73,6 @@ SET(DOC_OUTPUT_PATH ${CMAKE_BINARY_DIR}/doc)
 if(CMAKE_C_FLAGS STREQUAL "")
   set(CMAKE_C_FLAGS "-O3 -g")
 endif()
-#if(APPLE)
-#	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -arch i386 -arch x86_64 -Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation")
-#endif(APPLE)
 add_definitions(-Wall)
 
 IF ( COMPILE_SSE )

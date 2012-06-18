@@ -106,21 +106,23 @@ typedef int DWORD;
 typedef int SOCKET;
 
 #endif
+#include <pthread.h>
 #include <libfreenect.h>
 #include <libfreenect-registration.h>
-#include "skeltrack.h"
 #include "queue.h"
 #include "md5.h"
 
 #define MISSED 3
 #define MAX_BYTES 32000
 #define FRAME_PIXELS 76800
-#define G_VALUE_INIT {0,{{0}}}
 #define HASH(d)\
 	MD5_Init(md5);\
 	MD5_Update(md5,mbuf,sprintf((char *)mbuf,"%s%d",secret,d));\
 	MD5_Final(mtemp, md5);\
 	for(itmp = 0; itmp < 16; itmp++) sprintf(hash+2*itmp,"%02x",mtemp[itmp])
+#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+#define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 #define IOPT(arg,var,min,max)\
 	itmp = atoi(arg);\
 	var = CLAMP(itmp,min,max);\
@@ -566,9 +568,9 @@ typedef int SOCKET;
 		miss=0;\
 	}
 #define DFRAME()\
-	g_mutex_lock(net_mutex);\
+	pthread_mutex_lock(&net_mutex);\
 	client->f->d++;\
-	g_mutex_unlock(net_mutex);\
+	pthread_mutex_unlock(&net_mutex);\
 	client->f = NULL
 #define STREAM(cls,entry,mod,off)\
 	if(client->m){\
@@ -625,31 +627,6 @@ typedef int SOCKET;
 	inf.in_color_space   = space;\
 	jpeg_set_defaults(&inf);\
 	jpeg_set_quality(&inf,quality,TRUE)
-#define BOUNDSET(bx,bX,by,bY)\
-	g_value_set_int (&dval,bx);\
-	g_object_set_property (G_OBJECT (skeleton), "bound-left", &dval);\
-	g_value_set_int (&dval,bX);\
-	g_object_set_property (G_OBJECT (skeleton), "bound-right", &dval);\
-	g_value_set_int (&dval,by);\
-	g_object_set_property (G_OBJECT (skeleton), "bound-top", &dval);\
-	g_value_set_int (&dval,bY);\
-	g_object_set_property (G_OBJECT (skeleton), "bound-bottom", &dval)	
-#define SKEL()\
-	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_HEAD)))\
-		len+=sprintf(dframe->buf+len,",-1,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
-	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_LEFT_HAND)))\
-		len+=sprintf(dframe->buf+len,",-2,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
-	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_RIGHT_HAND)))\
-		len+=sprintf(dframe->buf+len,",-3,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
-	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_LEFT_SHOULDER)))\
-		len+=sprintf(dframe->buf+len,",-4,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
-	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_RIGHT_SHOULDER)))\
-		len+=sprintf(dframe->buf+len,",-5,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
-	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_LEFT_ELBOW)))\
-		len+=sprintf(dframe->buf+len,",-6,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
-	if((joint = skeltrack_joint_list_get_joint (list,SKELTRACK_JOINT_ID_RIGHT_ELBOW)))\
-		len+=sprintf(dframe->buf+len,",-7,%d,%d,%d,%d,%d,%d",joint->x,joint->y,joint->z,joint->screen_x,joint->screen_y,depth_ref[joint->screen_x+joint->screen_y*320]);\
-	skeltrack_joint_list_free(list)
 #define MSTATE()\
 	freenect_update_tilt_state(f_dev);\
 	state = freenect_get_tilt_state(f_dev);\
@@ -748,21 +725,24 @@ uint8_t black[320] __attribute__ ((aligned (16)));
 uint8_t gray[320] __attribute__ ((aligned (16)));
 #endif
 
-static GMutex *depth_mutex = NULL;
-static GMutex *video_mutex = NULL;
-static GMutex *net_mutex = NULL;
-static GMutex *conf_mutex = NULL;
-static GMutex *dev_mutex = NULL;
+pthread_mutex_t depth_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t video_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t net_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t conf_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t dev_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-GCond* depth_cond = NULL;
-GCond* video_cond = NULL;
+pthread_cond_t depth_cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t video_cond = PTHREAD_COND_INITIALIZER;
 
-static SkeltrackSkeleton *skeleton = NULL;
+pthread_attr_t attr;
+pthread_t dthread;
+pthread_t vthread;
+
 char *lfile,*sfile,*ofile,*ifile,*rfile;
 int32_t regbuf[FRAME_PIXELS*2+10000];
 frame_t *ndframe,*ngframe,*nvframe,*nrframe,*nbframe;
 uint8_t dwait,vwait,depth_to_gray[2048],quality,run_y[FRAME_PIXELS/2+1];
-uint16_t depth_ref[FRAME_PIXELS],depth_to_raw[10000],depth_to_mm[2048],run_zv[FRAME_PIXELS/2+1],run_Zv[FRAME_PIXELS/2+1],run_sv[FRAME_PIXELS/2+1],run_ev[FRAME_PIXELS/2+1],run_s[FRAME_PIXELS/2+1],run_e[FRAME_PIXELS/2+1],run_z[FRAME_PIXELS/2+1],run_Z[FRAME_PIXELS/2+1],sbuf[1200],run_label[FRAME_PIXELS/2+1],r_label[FRAME_PIXELS/2+1],l_checked[FRAME_PIXELS/2+1],l_runs[FRAME_PIXELS/2+1],l_pos_x[FRAME_PIXELS/2+1],l_pos_X[FRAME_PIXELS/2+1],l_pos_y[FRAME_PIXELS/2+1],l_pos_Y[FRAME_PIXELS/2+1],l_pos_z[FRAME_PIXELS/2+1],l_pos_Z[FRAME_PIXELS/2+1];
+uint16_t depth_ref[FRAME_PIXELS],depth_to_raw[10000],depth_to_mm[2048],run_zv[FRAME_PIXELS/2+1],run_Zv[FRAME_PIXELS/2+1],run_sv[FRAME_PIXELS/2+1],run_ev[FRAME_PIXELS/2+1],run_s[FRAME_PIXELS/2+1],run_e[FRAME_PIXELS/2+1],run_z[FRAME_PIXELS/2+1],run_Z[FRAME_PIXELS/2+1],run_label[FRAME_PIXELS/2+1],r_label[FRAME_PIXELS/2+1],l_checked[FRAME_PIXELS/2+1],l_runs[FRAME_PIXELS/2+1],l_pos_x[FRAME_PIXELS/2+1],l_pos_X[FRAME_PIXELS/2+1],l_pos_y[FRAME_PIXELS/2+1],l_pos_Y[FRAME_PIXELS/2+1],l_pos_z[FRAME_PIXELS/2+1],l_pos_Z[FRAME_PIXELS/2+1];
 uint32_t run_sum[FRAME_PIXELS/2+1],l_cx[FRAME_PIXELS/2+1],l_cy[FRAME_PIXELS/2+1],l_sum[FRAME_PIXELS/2+1],l_count[FRAME_PIXELS/2+1],l_vrun[FRAME_PIXELS/2+1],dstamp,vstamp,dcb,vcb,led,dmiss,gmiss,vmiss,rmiss,bmiss,gcount;
 int32_t gbuf[128],umax,frmax,active;
 freenect_context *f_ctx;
