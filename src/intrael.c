@@ -320,29 +320,8 @@ void *depth_thread()
 				pthread_mutex_unlock(&depth_mutex);
 				continue;
 			} else {
-				if(framefix) {
-					framefix=0;
-					for(y=0; y!=240; y++) {
-						dref=depth_ref+(320*y);
-						for(x=0,i=1; i!=316; i++) {
-							da=depth_ref[i];
-							if(x) {
-								if(da) {
-									dz=(dz+da)/2;
-									for(ni=x; ni!=i; ni++)
-										dref[ni]=dz;
-									x=0;
-								}
-							} else if(!da) {
-								x=i-1;
-								if(!(dz=dref[x])) x=0;
-							}
-						}
-						if(x) for(ni=x; ni!=i; ni++) dref[ni]=dz;
-					}
-					for(ni=0; ni!=FRAME_PIXELS; ni++) depth_ref[ni] = depth_to_mm[depth_ref[ni]];
-				}
 				if(mode<0) {
+				//if(0) {
 					dz=depth_to_raw[t_z];
 					dZ=depth_to_raw[t_Z];
 					x=abs(mode);
@@ -384,11 +363,13 @@ void *depth_thread()
 						dref=depth_ref+(320*y);
 						drz=depth_ref_z+(320*y);
 						drZ=depth_ref_Z+(320*y);
-						for(i=0; i!=316; i++) {
-							ni=depth_to_raw[dref[i]]-mode;
+						for(i=0; i!=320; i++) {
+							
+							ni=dref[i]-mode;
+							
 							if(ni > 0) {
-								drz[i] =  ni > rawz ? ni:rawz;
-								drZ[i] =  ni > rawZ ? ni:rawZ;
+								drz[i] =  ni > rawz ? rawz:ni;
+								drZ[i] =  ni > rawZ ? rawZ:ni;
 							} else {
 								drz[i] = 2048;
 								drZ[i] = 0;
@@ -396,6 +377,13 @@ void *depth_thread()
 						}
 					}
 				}
+				if(framefix) {
+					framefix=0;
+					for(ni=0; ni!=FRAME_PIXELS; ni++){ 
+						depth_ref[ni] = depth_to_mm[depth_ref[ni]];
+					}
+				}
+				
 			}
 
 		}
@@ -450,6 +438,8 @@ void *depth_thread()
 					ftmp = ni - depth_to_mm[gmin];
 					for(; gmin != gmax; gmin++) {
 						depth_to_gray[gmin] = ((ni-depth_to_mm[gmin])/ftmp)*255;
+					//depth_to_gray[gmin] = 255;
+					
 					}
 					depth_to_gray[0]=0;
 #if defined USE_SSE
@@ -461,6 +451,7 @@ void *depth_thread()
 				}
 				jpeg_set_frame(&ginfo,gframe->buf+53, &len);
 				jpeg_start_compress( &ginfo, TRUE );
+				memset(black,0,320);
 				for(y=0; y!=t_y; y++) jpeg_write_scanlines(&ginfo,&jblack, TRUE);
 			}
 			if(dmap) {
@@ -958,6 +949,7 @@ int main(int argc, char **argv)
 	}
 	memcpy(ncbuf,cbuf,512);
 	memcpy(gbuf,cbuf,512);
+	memset(black,0,320);
 	gbuf[0] = cc;
 	if (freenect_init(&f_ctx, NULL) < 0) FAIL("Could not initialize libfreenect, aborting")
 	freenect_set_log_level(f_ctx, FREENECT_LOG_FATAL);
@@ -1012,6 +1004,7 @@ int main(int argc, char **argv)
 				freenect_start_depth(f_dev);
 				if(video) freenect_start_video(f_dev);
 				reg=freenect_copy_registration(f_dev);
+				printf("%f %f %f\n",reg.zero_plane_info.reference_pixel_size/reg.zero_plane_info.reference_distance,reg.zero_plane_info.reference_pixel_size,reg.zero_plane_info.reference_distance);
 				depth_to_mm[0]=depth_to_raw[0]=0;
 				for(i=1; i!=1054; i++) depth_to_mm[i] = reg.raw_to_mm_shift[i];
 				for(; i!=2048; i++) depth_to_mm[i] = 0;
