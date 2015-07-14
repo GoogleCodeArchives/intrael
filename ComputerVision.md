@@ -1,0 +1,20 @@
+We've been typing and clicking for so long that it feels natural by now, but evolution also comes by naturally. For those not already acquainted with the Kinect, it's the first ever consumer grade depth camera that will help us redefine the way we interact with computers. Of course, interaction also needs a counterpart and on the other side of the pond, HTML has grown to be the best bundle of technologies for media delivery. It's no wonder that it has the greatest userbase as well. So, all that's missing is integrating the kinect with the web somehow. But where do we start in order to get there?
+
+
+![http://1.bp.blogspot.com/-OjyDVGcsu68/TkffA1Fo90I/AAAAAAAAAHg/zP0k6QhlrK0/s1600/KinectIR.png](http://1.bp.blogspot.com/-OjyDVGcsu68/TkffA1Fo90I/AAAAAAAAAHg/zP0k6QhlrK0/s1600/KinectIR.png)
+
+
+In the beginning there was a very neat concept. By scattering an infrared laser through a prism a cloud of invisible dots is projected. A simple IR-filtered camera, mounted on the device alongside the laser, collects frames and delivers them to a dedicated processor that does all the magic. Of course, there's nothing really magical about it, just some smart math that compare the received images to the expected pattern and compute accurate depth measurements based on the distortion of the dot cloud. This cyclopean technique of computer vision is formally referred to as [structured light scanning](http://en.wikipedia.org/wiki/Structured_light).
+
+![http://3.bp.blogspot.com/-3HUElIQMWWI/Tkj-pyKqBlI/AAAAAAAAAHk/Cu3rQ9ui2cg/s1600/depth.jpg](http://3.bp.blogspot.com/-3HUElIQMWWI/Tkj-pyKqBlI/AAAAAAAAAHk/Cu3rQ9ui2cg/s1600/depth.jpg)
+
+Notice that the hue on the depth stream correlates to accurate depth measurements for every pixel. It certainly seems interesting but what can we do with it? Well, a video stream is just a sequence of images so standard processing techniques apply here. We'll probably have to employ [thresholding](http://en.wikipedia.org/wiki/Thresholding_(image_processing)) which means the darkening of pixels that are of no interest to us. The tricky part is that 'interest' has to be defined algorithmically and that's quite difficult to get right on normal images.
+
+![http://3.bp.blogspot.com/-sP3eYG20aQE/Tkj-zVPhauI/AAAAAAAAAHo/WaQgJTVBwjo/s1600/depth2.jpg](http://3.bp.blogspot.com/-sP3eYG20aQE/Tkj-zVPhauI/AAAAAAAAAHo/WaQgJTVBwjo/s1600/depth2.jpg)
+
+Luckily, the kinect oversimplifies things for us as we can get great results just by filtering out pixels based on their depth values. The desired outcome is the formation of islands in a dark sea of zeros. That makes our data suitable for another operation called [connected component labeling](http://en.wikipedia.org/wiki/Connected-component_labeling). Here we assign each pixel a numeric label that's common with all other pixels that belong to the same blob. This practically allows us to distinguish objects so we can measure their geometric properties and use them to derive  appropriate stimuli/events for our interface.
+
+
+<a href='http://www.youtube.com/watch?feature=player_embedded&v=sIXIGeJSuAg' target='_blank'><img src='http://img.youtube.com/vi/sIXIGeJSuAg/0.jpg' width='425' height=344 /></a>
+
+Intrael is a small application server that efficiently performs the chain described above.  The application part consists of a configurable engine that takes input from the kinect's depth cam and thresholds it based on depth ranges, optionally removing the background. It then labels, measures and filters  connected components. Finally, several 3D coordinates for each found blob are made available to network clients in the form of numeric streams. These can be interpreted and trigger responses according to every application's needs. The raw image streams from the depth and rgb cameras are provided as well for further processing. You can read all the details about the software in the manual included with the source or binaries. After running it you'll probably want to test it. Read about the [TestConsole](TestConsole.md).
